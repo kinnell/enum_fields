@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'pathname'
+
 require 'enum_fields'
 
 SPEC_PATH = Pathname.getwd.join('spec').freeze
