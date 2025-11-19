@@ -28,5 +28,13 @@ module EnumFields
         @enum_fields ||= {}.with_indifferent_access
       end
     end
+
+    included do
+      def enum_fields_metadata
+        self.class.enum_fields.keys.index_with do |accessor|
+          public_send("#{accessor}_metadata")
+        end
+      end
+    end
   end
 end

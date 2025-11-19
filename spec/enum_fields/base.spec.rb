@@ -104,6 +104,20 @@ RSpec.describe EnumFields::Base do
     end
   end
 
+  describe 'Instance.enum_fields_metadata' do
+    it 'defines enum_fields_metadata method on the instance' do
+      expect(record).to respond_to(:enum_fields_metadata)
+    end
+
+    it 'returns the metadata of the accessor' do
+      sample_column_value = record.sample_column
+      sample_column_metadata = definitions[sample_column_value.to_sym]
+
+      expect(record.enum_fields_metadata.keys).to match_array(['sample_column'])
+      expect(record.enum_fields_metadata.values).to match_array([sample_column_metadata])
+    end
+  end
+
   describe 'Instance.<accessor>' do
     it 'defines getter method on the instance' do
       expect(record).to respond_to(:sample_column)
