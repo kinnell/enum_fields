@@ -18,7 +18,7 @@ module EnumFields
       define_class_methods!
       define_instance_getter!
       define_instance_setter!
-      define_metadata_method!
+      define_metadata_methods!
       define_property_methods!
       define_inquiry_methods!
       define_scopes!
@@ -76,7 +76,7 @@ module EnumFields
       end
     end
 
-    def define_metadata_method!
+    def define_metadata_methods!
       accessor = @accessor
       column_name = @column_name
 
