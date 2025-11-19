@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe EnumFields, 'Additional Properties' do
+RSpec.describe EnumFields::Base, 'Additional Properties' do
   include_context 'with TestModel'
 
   let(:definitions) do

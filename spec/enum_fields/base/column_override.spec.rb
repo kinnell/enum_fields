@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe EnumFields, 'Column Override' do
+RSpec.describe EnumFields::Base, 'Column Override' do
   include_context 'with TestModel'
 
   let(:definitions) do

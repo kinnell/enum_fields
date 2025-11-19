@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe EnumFields, 'Error Handling' do
+RSpec.describe EnumFields::Base, 'Error Handling' do
   include_context 'with TestModel'
 
   context 'when :definitions is nil' do

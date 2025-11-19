@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe EnumFields, 'Hash Definitions' do
+RSpec.describe EnumFields::Base do
   include_context 'with TestModel'
 
   let(:definitions) do

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe EnumFields, 'Array Definitions' do
+RSpec.describe EnumFields::Base, 'Array Definitions' do
   include_context 'with TestModel'
 
   let(:definitions) { %w[value1 value2] }
