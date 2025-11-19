@@ -15,6 +15,13 @@ RSpec.shared_context 'with TestModel' do
     stub_const('TestModel', test_model_class)
   end
 
-  let(:record) { TestModel.new(sample_column: sample_column_value) }
+  let(:record) do
+    TestModel.new({
+      sample_column: sample_column_value,
+      another_column: another_column_value,
+    })
+  end
+
   let(:sample_column_value) { 'value1' }
+  let(:another_column_value) { 'value3' }
 end

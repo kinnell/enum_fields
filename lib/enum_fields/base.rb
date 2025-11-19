@@ -33,7 +33,7 @@ module EnumFields
       def enum_fields_metadata
         self.class.enum_fields.keys.index_with do |accessor|
           public_send("#{accessor}_metadata")
-        end
+        end.with_indifferent_access
       end
     end
   end

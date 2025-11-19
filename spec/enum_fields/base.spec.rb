@@ -22,8 +22,22 @@ RSpec.describe EnumFields::Base do
     }
   end
 
+  let(:another_definitions) do
+    {
+      value3: {
+        value: 'value3',
+        label: 'Value 3',
+      },
+      value4: {
+        value: 'value4',
+        label: 'Value 4',
+      },
+    }
+  end
+
   before do
     TestModel.enum_field :sample_column, definitions
+    TestModel.enum_field :another_column, another_definitions
   end
 
   describe 'Model.enum_field_for' do
@@ -109,12 +123,15 @@ RSpec.describe EnumFields::Base do
       expect(record).to respond_to(:enum_fields_metadata)
     end
 
-    it 'returns the metadata of the accessor' do
-      sample_column_value = record.sample_column
-      sample_column_metadata = definitions[sample_column_value.to_sym]
+    it 'returns a HashWithIndifferentAccess' do
+      expect(record.enum_fields_metadata).to be_a(HashWithIndifferentAccess)
+    end
 
-      expect(record.enum_fields_metadata.keys).to match_array(['sample_column'])
-      expect(record.enum_fields_metadata.values).to match_array([sample_column_metadata])
+    it 'returns the metadata of the accessor' do
+      expect(record.enum_fields_metadata).to match({
+        sample_column: definitions[record.sample_column.to_sym],
+        another_column: another_definitions[record.another_column.to_sym],
+      })
     end
   end
 
