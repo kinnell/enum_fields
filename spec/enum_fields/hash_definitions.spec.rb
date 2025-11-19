@@ -26,6 +26,42 @@ RSpec.describe EnumFields, 'Hash Definitions' do
     TestModel.enum_field :sample_column, definitions
   end
 
+  describe 'Model.enum_field_for' do
+    context 'when the accessor is defined' do
+      let(:accessor) { :sample_column }
+
+      it 'returns the definition' do
+        expect(TestModel.enum_field_for(accessor)).to match(definitions)
+      end
+    end
+
+    context 'when the accessor is not defined' do
+      let(:accessor) { :sample_field }
+
+      it 'returns nil' do
+        expect(TestModel.enum_field_for(accessor)).to be_nil
+      end
+    end
+  end
+
+  describe 'Model.enum_field?' do
+    context 'when the accessor is defined' do
+      let(:accessor) { :sample_column }
+
+      it 'returns true' do
+        expect(TestModel.enum_field?(accessor)).to be_truthy
+      end
+    end
+
+    context 'when the accessor is not defined' do
+      let(:accessor) { :sample_field }
+
+      it 'returns false' do
+        expect(TestModel.enum_field?(accessor)).to be_falsey
+      end
+    end
+  end
+
   describe 'Model.<accessor>s' do
     it 'defines definitions method on the class' do
       expect(TestModel).to respond_to(:sample_columns)

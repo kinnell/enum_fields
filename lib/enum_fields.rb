@@ -34,6 +34,10 @@ module EnumFields
       enum_fields[accessor]
     end
 
+    def enum_field?(accessor)
+      enum_fields.key?(accessor)
+    end
+
     def enum_fields
       @enum_fields ||= {}.with_indifferent_access
     end
