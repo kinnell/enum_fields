@@ -16,6 +16,7 @@ module EnumFields
     def define!
       store_definition!
       define_class_methods!
+      define_class_value_accessors!
       define_instance_getter!
       define_instance_setter!
       define_metadata_methods!
@@ -50,6 +51,18 @@ module EnumFields
       @model_class.define_singleton_method("#{@accessor}_options") do
         definition_data.map do |key, metadata|
           [metadata[:label], key.to_s]
+        end
+      end
+    end
+
+    def define_class_value_accessors!
+      accessor = @accessor
+
+      @definition.each do |key, metadata|
+        definition_value = metadata[:value]
+
+        @model_class.define_singleton_method("#{key}_#{accessor}_value") do
+          definition_value
         end
       end
     end

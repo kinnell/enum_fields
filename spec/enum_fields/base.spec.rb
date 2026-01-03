@@ -118,6 +118,18 @@ RSpec.describe EnumFields::Base do
     end
   end
 
+  describe 'Model.<key>_<accessor>_value' do
+    it 'defines value accessor methods for each key on the class' do
+      expect(TestModel).to respond_to(:value1_sample_column_value)
+      expect(TestModel).to respond_to(:value2_sample_column_value)
+    end
+
+    it 'returns the value for each key' do
+      expect(TestModel.value1_sample_column_value).to eq('value1')
+      expect(TestModel.value2_sample_column_value).to eq('value2')
+    end
+  end
+
   describe 'Instance.enum_fields_metadata' do
     it 'defines enum_fields_metadata method on the instance' do
       expect(record).to respond_to(:enum_fields_metadata)

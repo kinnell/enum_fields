@@ -156,6 +156,11 @@ Campaign.stages_values # ['draft', 'scheduled', 'completed']
 
 # Returns the options for form helpers
 Campaign.stages_options # [['Draft', 'draft'], ['Scheduled', 'scheduled'], ['Completed', 'completed']]
+
+# Returns the value for a specific key
+Campaign.draft_stage_value     # 'draft'
+Campaign.scheduled_stage_value # 'scheduled'
+Campaign.completed_stage_value # 'completed'
 ```
 
 #### Instance Getter/Setter
