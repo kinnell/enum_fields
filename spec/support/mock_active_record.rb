@@ -1,6 +1,38 @@
 # frozen_string_literal: true
 
 module MockActiveRecord
+  class MockReflection
+    attr_reader :name, :options
+
+    def initialize(name, options = {})
+      @name = name
+      @options = options
+    end
+  end
+
+  class MockErrors
+    def initialize
+      @errors = {}
+    end
+
+    def add(field, message)
+      @errors[field] ||= []
+      @errors[field] << message
+    end
+
+    def empty?
+      @errors.empty?
+    end
+
+    def [](field)
+      @errors[field] || []
+    end
+
+    def clear
+      @errors = {}
+    end
+  end
+
   class Base
     class << self
       def scope(name, body)
@@ -14,16 +46,54 @@ module MockActiveRecord
         @validations[field] = options
       end
 
+      def validate(&block)
+        @custom_validations ||= []
+        @custom_validations << block
+      end
+
       def validations
         @validations ||= {}
+      end
+
+      def custom_validations
+        @custom_validations ||= []
+      end
+
+      def belongs_to(name, options = {})
+        @associations ||= []
+        @associations << MockReflection.new(name, options)
+
+        return unless options[:polymorphic]
+
+        define_method(name) do
+          @polymorphic_associations ||= {}
+          @polymorphic_associations[name]
+        end
+
+        define_method("#{name}=") do |value|
+          @polymorphic_associations ||= {}
+          @polymorphic_associations[name] = value
+          @attributes["#{name}_type"] = value&.class&.name
+          @attributes["#{name}_id"] = value&.id
+        end
+      end
+
+      def reflect_on_all_associations(type = nil)
+        @associations ||= []
+        return @associations if type.nil?
+        return @associations if type == :belongs_to
+
+        []
       end
     end
 
     def initialize(attributes = {})
       @attributes = attributes.stringify_keys
+      @polymorphic_associations = {}
+      @errors = MockErrors.new
     end
 
-    attr_reader :attributes
+    attr_reader :attributes, :errors
 
     def [](key)
       @attributes[key.to_s]
@@ -42,6 +112,8 @@ module MockActiveRecord
     end
 
     def valid?
+      @errors.clear
+
       self.class.validations.each do |field, options|
         value = @attributes[field.to_s]
 
@@ -51,16 +123,24 @@ module MockActiveRecord
         allow_nil = options[:inclusion][:allow_nil]
 
         next if value.nil? && allow_nil
-        return false unless allowed_values.include?(value)
+
+        unless allowed_values.include?(value)
+          @errors.add(field, 'is not included in the list')
+          return false
+        end
       end
-      true
+
+      self.class.custom_validations.each do |validation_block|
+        instance_eval(&validation_block)
+      end
+
+      @errors.empty?
     end
 
     def invalid?
       !valid?
     end
 
-    # Generate getter and setter for any attribute
     def method_missing(method_name, *args)
       method_str = method_name.to_s
 
