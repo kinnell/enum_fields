@@ -11,6 +11,7 @@ module EnumFields
       @accessor = accessor.to_sym
       @column_name = options.fetch(:column, @accessor).to_sym
       @definition = Definition.new(definition)
+      @options = options
     end
 
     def define!
@@ -143,13 +144,56 @@ module EnumFields
     end
 
     def define_validation!
-      return if @definition.blank?
+      return unless column_validatable?
 
+      if column_polymorphic_association_name.present?
+        define_polymorphic_validation!
+      else
+        define_standard_validation!
+      end
+    end
+
+    def define_standard_validation!
       valid_values = @definition.values.pluck(:value)
+
       @model_class.validates(@column_name, inclusion: {
         in: valid_values,
         allow_nil: true,
       })
+    end
+
+    def define_polymorphic_validation!
+      association_name = column_polymorphic_association_name
+      column_name = @column_name
+      accessor = @accessor
+
+      @model_class.validate do
+        association_obj = respond_to?(association_name) ? public_send(association_name) : nil
+        valid_values = self.class.public_send("#{accessor}_values")
+
+        if association_obj
+          errors.add(association_name, "must be one of: #{valid_values.join(', ')}") unless valid_values.include?(association_obj.class.name)
+        else
+          column_value = attributes[column_name.to_s]
+          next if column_value.nil?
+
+          errors.add(column_name, "must be one of: #{valid_values.join(', ')}") unless valid_values.include?(column_value)
+        end
+      end
+    end
+
+    def column_validatable?
+      @definition.present? && @options.fetch(:validate, true)
+    end
+
+    def column_polymorphic_association_name
+      return nil unless @model_class.respond_to?(:reflect_on_all_associations)
+
+      reflection = @model_class.reflect_on_all_associations(:belongs_to).find do |r|
+        r.options[:polymorphic] && "#{r.name}_type" == @column_name.to_s
+      end
+
+      reflection&.name
     end
   end
 end
