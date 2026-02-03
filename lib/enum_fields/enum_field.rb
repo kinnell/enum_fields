@@ -101,7 +101,7 @@ module EnumFields
         definitions = self.class.enum_field_for(accessor)
         return nil if definitions.blank?
 
-        definitions[column_value]
+        definitions[column_value] || definitions.values.find { |d| d[:value] == column_value }
       end
     end
 
@@ -117,7 +117,8 @@ module EnumFields
           definitions = self.class.enum_field_for(accessor)
           return nil if definitions.blank?
 
-          definitions.dig(column_value, property)
+          metadata = definitions[column_value] || definitions.values.find { |d| d[:value] == column_value }
+          metadata&.dig(property)
         end
       end
     end

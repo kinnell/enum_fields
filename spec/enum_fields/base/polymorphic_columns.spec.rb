@@ -62,6 +62,8 @@ RSpec.describe EnumFields::Base, 'Polymorphic Columns' do
   end
 
   describe 'polymorphic validation' do
+    let(:record) { PolymorphicTestModel.new(record_type: 'TypeA') }
+
     before do
       PolymorphicTestModel.belongs_to(:record, polymorphic: true)
       PolymorphicTestModel.enum_field(:record_type, definitions)
@@ -72,15 +74,34 @@ RSpec.describe EnumFields::Base, 'Polymorphic Columns' do
       expect(PolymorphicTestModel.custom_validations).not_to be_empty
     end
 
-    it 'still defines the enum accessors' do
+    it 'defines the enum accessors' do
       expect(PolymorphicTestModel).to respond_to(:record_types)
       expect(PolymorphicTestModel).to respond_to(:record_type_values)
     end
 
-    it 'still defines inquiry methods' do
-      record = PolymorphicTestModel.new(record_type: 'TypeA')
+    it 'defines inquiry methods' do
       expect(record).to respond_to(:TypeA_record_type?)
       expect(record).to respond_to(:TypeB_record_type?)
+    end
+
+    it 'defines property methods' do
+      expect(record).to respond_to(:record_type_label)
+      expect(record).to respond_to(:record_type_value)
+    end
+
+    it 'has correct property values' do
+      expect(record.record_type_label).to eq('Type A')
+      expect(record.record_type_value).to eq('TypeA')
+    end
+
+    it 'defines metadata method' do
+      expect(record).to respond_to(:record_type_metadata)
+      expect(record.record_type_metadata).to include('value' => 'TypeA', 'label' => 'Type A')
+    end
+
+    it 'defines scopes' do
+      expect(PolymorphicTestModel).to respond_to(:TypeA_record_type)
+      expect(PolymorphicTestModel).to respond_to(:TypeB_record_type)
     end
 
     describe 'with association object (Model.new(record: obj))' do
@@ -93,6 +114,20 @@ RSpec.describe EnumFields::Base, 'Polymorphic Columns' do
 
         it 'sets record_type from association class name' do
           expect(record.record_type).to eq('TypeA')
+        end
+
+        it 'has correct property values' do
+          expect(record.record_type_label).to eq('Type A')
+          expect(record.record_type_value).to eq('TypeA')
+        end
+
+        it 'has correct metadata' do
+          expect(record.record_type_metadata).to include('value' => 'TypeA', 'label' => 'Type A')
+        end
+
+        it 'inquiry methods work after assigning association' do
+          expect(record.TypeA_record_type?).to be true
+          expect(record.TypeB_record_type?).to be false
         end
       end
 
@@ -214,6 +249,43 @@ RSpec.describe EnumFields::Base, 'Polymorphic Columns' do
     end
   end
 
+  describe 'with snake_case definition keys (mismatched from column values)' do
+    let(:snake_case_definitions) do
+      {
+        type_a: { value: 'TypeA', label: 'Type A', priority: 1 },
+        type_b: { value: 'TypeB', label: 'Type B', priority: 2 },
+      }
+    end
+
+    before do
+      PolymorphicTestModel.belongs_to(:record, polymorphic: true)
+      PolymorphicTestModel.enum_field(:record_type, snake_case_definitions)
+    end
+
+    it 'class methods work' do
+      expect(PolymorphicTestModel.record_types.keys).to contain_exactly('type_a', 'type_b')
+      expect(PolymorphicTestModel.record_type_values).to contain_exactly('TypeA', 'TypeB')
+    end
+
+    it 'property methods work via value lookup when key does not match column value' do
+      record = PolymorphicTestModel.new(record_type: 'TypeA')
+      expect(record.record_type_label).to eq('Type A')
+      expect(record.record_type_value).to eq('TypeA')
+      expect(record.record_type_priority).to eq(1)
+    end
+
+    it 'metadata method works via value lookup' do
+      record = PolymorphicTestModel.new(record_type: 'TypeA')
+      expect(record.record_type_metadata).to include('value' => 'TypeA', 'label' => 'Type A', 'priority' => 1)
+    end
+
+    it 'inquiry methods still work (they use value comparison)' do
+      record = PolymorphicTestModel.new(record_type: 'TypeA')
+      expect(record.type_a_record_type?).to be true
+      expect(record.type_b_record_type?).to be false
+    end
+  end
+
   describe 'with column override on polymorphic' do
     before do
       PolymorphicTestModel.belongs_to(:taggable, polymorphic: true)
@@ -223,6 +295,54 @@ RSpec.describe EnumFields::Base, 'Polymorphic Columns' do
     it 'detects polymorphic based on actual column name' do
       expect(PolymorphicTestModel.validations[:taggable_type]).to be_nil
       expect(PolymorphicTestModel.custom_validations).not_to be_empty
+    end
+
+    it 'defines class methods using accessor name' do
+      expect(PolymorphicTestModel).to respond_to(:tag_kinds)
+      expect(PolymorphicTestModel).to respond_to(:tag_kind_values)
+      expect(PolymorphicTestModel).to respond_to(:tag_kind_options)
+    end
+
+    it 'defines property methods using accessor name' do
+      record = PolymorphicTestModel.new(taggable_type: 'TypeA')
+      expect(record).to respond_to(:tag_kind_label)
+      expect(record).to respond_to(:tag_kind_value)
+    end
+
+    it 'property methods read from the correct column' do
+      record = PolymorphicTestModel.new(taggable_type: 'TypeA')
+      expect(record.tag_kind_label).to eq('Type A')
+      expect(record.tag_kind_value).to eq('TypeA')
+    end
+
+    it 'defines metadata method using accessor name' do
+      record = PolymorphicTestModel.new(taggable_type: 'TypeA')
+      expect(record).to respond_to(:tag_kind_metadata)
+      expect(record.tag_kind_metadata).to include('value' => 'TypeA', 'label' => 'Type A')
+    end
+
+    it 'defines inquiry methods using accessor name' do
+      record = PolymorphicTestModel.new(taggable_type: 'TypeA')
+      expect(record).to respond_to(:TypeA_tag_kind?)
+      expect(record.TypeA_tag_kind?).to be true
+    end
+
+    it 'defines scopes using accessor name' do
+      expect(PolymorphicTestModel).to respond_to(:TypeA_tag_kind)
+      expect(PolymorphicTestModel).to respond_to(:TypeB_tag_kind)
+    end
+
+    it 'defines instance getter for accessor' do
+      record = PolymorphicTestModel.new(taggable_type: 'TypeA')
+      expect(record).to respond_to(:tag_kind)
+      expect(record.tag_kind).to eq('TypeA')
+    end
+
+    it 'defines instance setter for accessor' do
+      record = PolymorphicTestModel.new
+      expect(record).to respond_to(:tag_kind=)
+      record.tag_kind = 'TypeB'
+      expect(record.taggable_type).to eq('TypeB')
     end
   end
 end
