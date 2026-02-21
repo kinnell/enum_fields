@@ -6,13 +6,13 @@ module TestModelHelper
       include EnumFields
 
       def self.name
-        'TestModel'
+        "TestModel"
       end
 
       class_eval(&block) if block
     end
 
-    stub_const('TestModel', model_class)
+    stub_const("TestModel", model_class)
     model_class
   end
 end

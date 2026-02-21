@@ -125,7 +125,7 @@ module MockActiveRecord
         next if value.nil? && allow_nil
 
         unless allowed_values.include?(value)
-          @errors.add(field, 'is not included in the list')
+          @errors.add(field, "is not included in the list")
           return false
         end
       end
@@ -144,8 +144,8 @@ module MockActiveRecord
     def method_missing(method_name, *args)
       method_str = method_name.to_s
 
-      if method_str.end_with?('=')
-        attr_name = method_str.chomp('=')
+      if method_str.end_with?("=")
+        attr_name = method_str.chomp("=")
         @attributes[attr_name] = args.first
       elsif @attributes.key?(method_str)
         @attributes[method_str]
@@ -156,7 +156,7 @@ module MockActiveRecord
 
     def respond_to_missing?(method_name, include_private = false)
       method_str = method_name.to_s
-      method_str.end_with?('=') || @attributes.key?(method_str) || super
+      method_str.end_with?("=") || @attributes.key?(method_str) || super
     end
   end
 

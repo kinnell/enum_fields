@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-RSpec.describe 'EnumFields::VERSION' do
-  it 'has a version number' do
+RSpec.describe "EnumFields::VERSION" do
+  it "has a version number" do
     expect(EnumFields::VERSION).not_to be(nil)
   end
 end

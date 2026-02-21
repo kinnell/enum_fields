@@ -11,7 +11,7 @@ module EnumFields
 
     def initialize(data)
       @data = build(data)
-      raise InvalidDefinitionsError, 'Definitions must be a Hash or Array' unless valid_hash?(@data)
+      raise InvalidDefinitionsError, "Definitions must be a Hash or Array" unless valid_hash?(@data)
 
       @properties = Set.new(STANDARD_PROPERTIES)
       @properties.merge(@data.flat_map { |_, metadata| metadata.keys })

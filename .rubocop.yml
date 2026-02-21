@@ -52,6 +52,9 @@ Style/RedundantBegin:
 Style/RegexpLiteral:
   EnforcedStyle: percent_r
 
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
 Style/TrailingCommaInArrayLiteral:
   EnforcedStyleForMultiline: comma
 
