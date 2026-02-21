@@ -18,6 +18,19 @@ module EnumFields
 
   autoload :Definition
   autoload :EnumField
+  autoload :Registry
+
+  def self.registry
+    @registry ||= Registry.new
+  end
+
+  def self.register(...)
+    registry.register(...)
+  end
+
+  def self.clear_registry!
+    @registry = nil
+  end
 
   include Base
 end

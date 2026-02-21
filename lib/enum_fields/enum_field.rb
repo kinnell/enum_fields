@@ -15,6 +15,7 @@ module EnumFields
     end
 
     def define!
+      register!
       store_definition!
       define_class_methods!
       define_class_value_accessors!
@@ -28,6 +29,14 @@ module EnumFields
     end
 
     private
+
+    def register!
+      EnumFields.register(
+        model_class: @model_class,
+        accessor: @accessor,
+        definition: @definition.data
+      )
+    end
 
     def store_definition!
       @model_class.enum_fields[@accessor] = @definition.data
