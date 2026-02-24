@@ -258,6 +258,114 @@ ticket.priority_metadata[:sla_hours]      # 72
 ticket.priority_metadata[:notify_manager] # false
 ```
 
+### Registry & Standalone Registration
+
+When `enum_field` is used in a model, definitions are automatically registered under a namespace derived from the model class name (e.g., `Campaign` becomes `campaign`).
+
+You can also register definitions directly, outside of models, using the `namespace` DSL:
+
+```ruby
+# config/initializers/enum_fields.rb
+EnumFields.namespace(:basic) do
+  enum_field :priority, {
+    low: {
+      value: "low",
+      label: "Low",
+    },
+    medium: {
+      value: "medium",
+      label: "Medium",
+    },
+    high: {
+      value: "high",
+      label: "High",
+    },
+  }
+
+  enum_field :status, {
+    active: {
+      value: "active",
+      label: "Active",
+    },
+    inactive: {
+      value: "inactive",
+      label: "Inactive",
+    },
+  }
+end
+```
+
+Access the raw registry:
+
+```ruby
+EnumFields.registry
+# => { "basic" => { "priority" => { ... }, "status" => { ... } }, "campaign" => { ... } }
+```
+
+### Catalog
+
+`EnumFields.catalog` returns all registered definitions with namespaces sorted alphabetically, each field's entries as an array of metadata hashes (keys stripped):
+
+```ruby
+EnumFields.catalog
+# => {
+#   "basic" => {
+#     "priority" => [
+#       {
+#         "value" => "low",
+#         "label" => "Low",
+#       },
+#       {
+#         "value" => "medium",
+#         "label" => "Medium",
+#       },
+#       {
+#         "value" => "high",
+#         "label" => "High",
+#       },
+#     ],
+#     "status" => [
+#       {
+#         "value" => "active",
+#         "label" => "Active",
+#       },
+#       {
+#         "value" => "inactive",
+#         "label" => "Inactive",
+#       },
+#     ],
+#   },
+#   "campaign" => {
+#     "stage" => [
+#       {
+#         "value" => "pending",
+#         "label" => "Pending",
+#         "icon" => "clock",
+#         "color" => "yellow",
+#       },
+#       {
+#         "value" => "processing",
+#         "label" => "Processing",
+#         "icon" => "cog",
+#         "color" => "blue",
+#       },
+#       {
+#         "value" => "shipped",
+#         "label" => "Shipped",
+#         "icon" => "truck",
+#         "color" => "green",
+#       },
+#       {
+#         "value" => "delivered",
+#         "label" => "Delivered",
+#         "icon" => "check",
+#         "color" => "green",
+#       },
+#     ],
+#   },
+# }
+```
+
 ## Development
 
 After checking out the repo, run:
