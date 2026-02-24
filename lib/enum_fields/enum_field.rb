@@ -31,11 +31,11 @@ module EnumFields
     private
 
     def register!
-      EnumFields.register(
-        model_class: @model_class,
+      EnumFields.register({
+        namespace: @model_class.name&.underscore || @model_class.object_id.to_s,
         accessor: @accessor,
-        definition: @definition.data
-      )
+        definition: @definition.data,
+      })
     end
 
     def store_definition!

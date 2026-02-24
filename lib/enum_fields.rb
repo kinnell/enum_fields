@@ -18,6 +18,7 @@ module EnumFields
 
   autoload :Definition
   autoload :EnumField
+  autoload :Namespace
   autoload :Registry
 
   def self.registry
@@ -26,6 +27,14 @@ module EnumFields
 
   def self.register(...)
     registry.register(...)
+  end
+
+  def self.namespace(name, &)
+    Namespace.new(name).instance_eval(&)
+  end
+
+  def self.catalog
+    registry.catalog
   end
 
   def self.clear_registry!

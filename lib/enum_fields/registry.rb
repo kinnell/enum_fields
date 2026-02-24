@@ -7,10 +7,19 @@ module EnumFields
       super(@store)
     end
 
-    def register(model_class:, accessor:, definition:)
-      key = model_class.name&.underscore || model_class.object_id.to_s
-      @store[key] ||= {}.with_indifferent_access
-      @store[key][accessor] = definition
+    def register(args = {})
+      namespace = args.fetch(:namespace) { raise ArgumentError, "namespace is required" }
+      accessor = args.fetch(:accessor) { raise ArgumentError, "accessor is required" }
+      definition = args.fetch(:definition, {})
+
+      @store[namespace] ||= {}.with_indifferent_access
+      @store[namespace][accessor] = definition
+    end
+
+    def catalog
+      sort_by { |key, _| key.to_s }.to_h.transform_values do |fields|
+        fields.transform_values(&:values)
+      end
     end
   end
 end
