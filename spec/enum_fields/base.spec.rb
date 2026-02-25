@@ -5,44 +5,44 @@ RSpec.describe EnumFields::Base do
 
   let(:definitions) do
     {
-      value1: {
-        value: "value1",
-        label: "Value 1",
-        icon: "icon1",
-        color: "color1",
-        tooltip: "Tooltip 1",
+      draft: {
+        value: "draft",
+        label: "Draft",
+        icon: "pencil",
+        color: "gray",
+        tooltip: "Not yet published",
       },
-      value2: {
-        value: "value2",
-        label: "Value 2",
-        icon: "icon2",
-        color: "color2",
-        tooltip: "Tooltip 2",
+      published: {
+        value: "published",
+        label: "Published",
+        icon: "check",
+        color: "green",
+        tooltip: "Publicly visible",
       },
     }
   end
 
-  let(:another_definitions) do
+  let(:category_definitions) do
     {
-      value3: {
-        value: "value3",
-        label: "Value 3",
+      blog: {
+        value: "blog",
+        label: "Blog",
       },
-      value4: {
-        value: "value4",
-        label: "Value 4",
+      tutorial: {
+        value: "tutorial",
+        label: "Tutorial",
       },
     }
   end
 
   before do
-    TestModel.enum_field :sample_column, definitions
-    TestModel.enum_field :another_column, another_definitions
+    TestModel.enum_field :status, definitions
+    TestModel.enum_field :category, category_definitions
   end
 
   describe "Model.enum_field_for" do
     context "when the accessor is defined" do
-      let(:accessor) { :sample_column }
+      let(:accessor) { :status }
 
       it "returns the definition" do
         expect(TestModel.enum_field_for(accessor)).to match(definitions)
@@ -50,7 +50,7 @@ RSpec.describe EnumFields::Base do
     end
 
     context "when the accessor is not defined" do
-      let(:accessor) { :sample_field }
+      let(:accessor) { :priority }
 
       it "returns nil" do
         expect(TestModel.enum_field_for(accessor)).to be_nil
@@ -60,7 +60,7 @@ RSpec.describe EnumFields::Base do
 
   describe "Model.enum_field?" do
     context "when the accessor is defined" do
-      let(:accessor) { :sample_column }
+      let(:accessor) { :status }
 
       it "returns true" do
         expect(TestModel.enum_field?(accessor)).to be_truthy
@@ -68,7 +68,7 @@ RSpec.describe EnumFields::Base do
     end
 
     context "when the accessor is not defined" do
-      let(:accessor) { :sample_field }
+      let(:accessor) { :priority }
 
       it "returns false" do
         expect(TestModel.enum_field?(accessor)).to be_falsey
@@ -78,41 +78,41 @@ RSpec.describe EnumFields::Base do
 
   describe "Model.<accessor>s" do
     it "defines definitions method on the class" do
-      expect(TestModel).to respond_to(:sample_columns)
+      expect(TestModel).to respond_to(:statuses)
     end
 
     it "returns definitions as a hash" do
-      expect(TestModel.sample_columns).to match(definitions)
+      expect(TestModel.statuses).to match(definitions)
     end
   end
 
   describe "Model.<accessor>s_count" do
     it "defines definitions count method on the class" do
-      expect(TestModel).to respond_to(:sample_columns_count)
+      expect(TestModel).to respond_to(:statuses_count)
     end
 
     it "returns the number of definitions" do
-      expect(TestModel.sample_columns_count).to eq(definitions.size)
+      expect(TestModel.statuses_count).to eq(definitions.size)
     end
   end
 
   describe "Model.<accessor>_values" do
     it "defines definitions values method on the class" do
-      expect(TestModel).to respond_to(:sample_column_values)
+      expect(TestModel).to respond_to(:status_values)
     end
 
     it "returns the values of the definitions" do
-      expect(TestModel.sample_column_values).to eq(%w[value1 value2])
+      expect(TestModel.status_values).to eq(%w[draft published])
     end
   end
 
   describe "Model.<accessor>_options" do
     it "defines definitions options method on the class" do
-      expect(TestModel).to respond_to(:sample_column_options)
+      expect(TestModel).to respond_to(:status_options)
     end
 
     it "returns the options of the definitions" do
-      expect(TestModel.sample_column_options).to match(definitions.map { |key, definition|
+      expect(TestModel.status_options).to match(definitions.map { |key, definition|
         [definition[:label], key.to_s]
       })
     end
@@ -120,13 +120,13 @@ RSpec.describe EnumFields::Base do
 
   describe "Model.<key>_<accessor>_value" do
     it "defines value accessor methods for each key on the class" do
-      expect(TestModel).to respond_to(:value1_sample_column_value)
-      expect(TestModel).to respond_to(:value2_sample_column_value)
+      expect(TestModel).to respond_to(:draft_status_value)
+      expect(TestModel).to respond_to(:published_status_value)
     end
 
     it "returns the value for each key" do
-      expect(TestModel.value1_sample_column_value).to eq("value1")
-      expect(TestModel.value2_sample_column_value).to eq("value2")
+      expect(TestModel.draft_status_value).to eq("draft")
+      expect(TestModel.published_status_value).to eq("published")
     end
   end
 
@@ -141,133 +141,133 @@ RSpec.describe EnumFields::Base do
 
     it "returns the metadata of the accessor" do
       expect(record.enum_fields_metadata).to match({
-        sample_column: definitions[record.sample_column.to_sym],
-        another_column: another_definitions[record.another_column.to_sym],
+        status: definitions[record.status.to_sym],
+        category: category_definitions[record.category.to_sym],
       })
     end
   end
 
   describe "Instance.<accessor>" do
     it "defines getter method on the instance" do
-      expect(record).to respond_to(:sample_column)
+      expect(record).to respond_to(:status)
     end
 
     it "returns the value of the accessor" do
-      expect(record.sample_column).to eq(sample_column_value)
+      expect(record.status).to eq(status_value)
     end
   end
 
   describe "Instance.<accessor>=" do
     it "defines setter method on the instance" do
-      expect(record).to respond_to(:sample_column=)
+      expect(record).to respond_to(:status=)
     end
 
     it "sets the value of the accessor" do
-      expect(record.sample_column).to eq(sample_column_value)
+      expect(record.status).to eq(status_value)
     end
   end
 
   describe "Instance.<accessor>_metadata" do
     it "defines metadata method on the instance" do
-      expect(record).to respond_to(:sample_column_metadata)
+      expect(record).to respond_to(:status_metadata)
     end
 
     it "returns the metadata of the accessor" do
-      expect(record.sample_column_metadata).to match(definitions[:value1])
+      expect(record.status_metadata).to match(definitions[:draft])
     end
   end
 
   describe "Instance.<accessor>_value" do
     it "defines value method on the instance" do
-      expect(record).to respond_to(:sample_column_value)
+      expect(record).to respond_to(:status_value)
     end
 
     it "returns the value of the accessor" do
-      expect(record.sample_column_value).to eq(definitions.dig(:value1, :value))
+      expect(record.status_value).to eq(definitions.dig(:draft, :value))
     end
   end
 
   describe "Instance.<accessor>_label" do
     it "defines label method on the instance" do
-      expect(record).to respond_to(:sample_column_label)
+      expect(record).to respond_to(:status_label)
     end
 
     it "returns the label of the accessor" do
-      expect(record.sample_column_label).to eq(definitions.dig(:value1, :label))
+      expect(record.status_label).to eq(definitions.dig(:draft, :label))
     end
   end
 
   describe "Instance.<accessor>_icon" do
     it "defines icon method on the instance" do
-      expect(record).to respond_to(:sample_column_icon)
+      expect(record).to respond_to(:status_icon)
     end
 
     it "returns the icon of the accessor" do
-      expect(record.sample_column_icon).to eq(definitions.dig(:value1, :icon))
+      expect(record.status_icon).to eq(definitions.dig(:draft, :icon))
     end
   end
 
   describe "Instance.<accessor>_color" do
     it "defines color method on the instance" do
-      expect(record).to respond_to(:sample_column_color)
+      expect(record).to respond_to(:status_color)
     end
 
     it "returns the color of the accessor" do
-      expect(record.sample_column_color).to eq(definitions.dig(:value1, :color))
+      expect(record.status_color).to eq(definitions.dig(:draft, :color))
     end
   end
 
   describe "Instance.<accessor>_tooltip" do
     it "defines tooltip method on the instance" do
-      expect(record).to respond_to(:sample_column_tooltip)
+      expect(record).to respond_to(:status_tooltip)
     end
 
     it "returns the tooltip of the accessor" do
-      expect(record.sample_column_tooltip).to eq(definitions.dig(:value1, :tooltip))
+      expect(record.status_tooltip).to eq(definitions.dig(:draft, :tooltip))
     end
   end
 
   describe "Instance.<accessor>?" do
     it "defines inquiry methods on the instance" do
-      expect(record).to respond_to(:value1_sample_column?)
-      expect(record).to respond_to(:value2_sample_column?)
+      expect(record).to respond_to(:draft_status?)
+      expect(record).to respond_to(:published_status?)
     end
 
-    it "returns true if the accessor is value1" do
-      expect(record.value1_sample_column?).to be_truthy
-      expect(record.value2_sample_column?).to be_falsey
+    it "returns true if the accessor is draft" do
+      expect(record.draft_status?).to be_truthy
+      expect(record.published_status?).to be_falsey
     end
   end
 
   describe "Model.<key>_<accessor>" do
     it "defines scope methods on the class" do
-      expect(TestModel).to respond_to(:value1_sample_column)
-      expect(TestModel).to respond_to(:value2_sample_column)
+      expect(TestModel).to respond_to(:draft_status)
+      expect(TestModel).to respond_to(:published_status)
     end
 
-    it "returns the records with the value1 accessor" do
-      expect(TestModel.value1_sample_column.to_sql).to match(%r{
+    it "returns the records with the draft scope" do
+      expect(TestModel.draft_status.to_sql).to match(%r{
         \ASELECT\s+"with_model_test_models_\d+_\d+"\.\*
         \s+FROM\s+"with_model_test_models_\d+_\d+"
-        \s+WHERE\s+"with_model_test_models_\d+_\d+"\."sample_column"\s+=\s+'value
+        \s+WHERE\s+"with_model_test_models_\d+_\d+"\."status"\s+=\s+'draft
       }x)
     end
 
-    it "returns the records with the value2 accessor" do
-      expect(TestModel.value2_sample_column.to_sql).to match(%r{
+    it "returns the records with the published scope" do
+      expect(TestModel.published_status.to_sql).to match(%r{
         \ASELECT\s+"with_model_test_models_\d+_\d+"\.\*
         \s+FROM\s+"with_model_test_models_\d+_\d+"
-        \s+WHERE\s+"with_model_test_models_\d+_\d+"\."sample_column"\s+=\s+'value
+        \s+WHERE\s+"with_model_test_models_\d+_\d+"\."status"\s+=\s+'published
       }x)
     end
   end
 
   describe "Instance validation" do
     context "when the accessor value is in the list of definitions" do
-      let(:sample_column_value) { "value1" }
+      let(:status_value) { "draft" }
 
       before do
-        record.update(sample_column: sample_column_value)
+        record.update(status: status_value)
       end
 
       it "is valid" do
@@ -276,10 +276,10 @@ RSpec.describe EnumFields::Base do
     end
 
     context "when the accessor value is not in the list of definitions" do
-      let(:sample_column_value) { "value3" }
+      let(:status_value) { "archived" }
 
       before do
-        record.update(sample_column: sample_column_value)
+        record.update(status: status_value)
       end
 
       it "is not valid" do

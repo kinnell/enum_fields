@@ -164,13 +164,21 @@ module MockActiveRecord
     def initialize(klass, body)
       @klass = klass
       @body = body
+      @where_conditions = {}
+      instance_exec(&body) if body
+    end
+
+    def where(conditions = {})
+      @where_conditions.merge!(conditions)
+      self
     end
 
     def to_sql
       @to_sql ||= begin
         table_name = "with_model_test_models_#{rand(100_000)}_#{rand(100_000)}"
+        col, val = @where_conditions.first
 
-        "SELECT \"#{table_name}\".* FROM \"#{table_name}\" WHERE \"#{table_name}\".\"sample_column\" = 'value'"
+        "SELECT \"#{table_name}\".* FROM \"#{table_name}\" WHERE \"#{table_name}\".\"#{col}\" = '#{val}'"
       end
     end
   end

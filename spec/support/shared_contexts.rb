@@ -17,11 +17,11 @@ RSpec.shared_context "with TestModel" do
 
   let(:record) do
     TestModel.new({
-      sample_column: sample_column_value,
-      another_column: another_column_value,
+      status: status_value,
+      category: category_value,
     })
   end
 
-  let(:sample_column_value) { "value1" }
-  let(:another_column_value) { "value3" }
+  let(:status_value) { "draft" }
+  let(:category_value) { "blog" }
 end

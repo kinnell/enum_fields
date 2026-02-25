@@ -75,6 +75,106 @@ RSpec.describe EnumFields::Definition do
       end
     end
 
+    context "when data is an Array of Hashes with string values" do
+      let(:data) do
+        [
+          {
+            value: "small",
+            label: "Small",
+          },
+          {
+            value: "medium",
+            label: "Medium",
+          },
+          {
+            value: "large",
+            label: "Large",
+          },
+        ]
+      end
+
+      it "converts to hash keyed by symbolized value" do
+        expect(subject.data).to match({
+          small: {
+            value: "small",
+            label: "Small",
+          },
+          medium: {
+            value: "medium",
+            label: "Medium",
+          },
+          large: {
+            value: "large",
+            label: "Large",
+          },
+        })
+      end
+
+      it "creates entries for all array elements" do
+        expect(subject.data.keys).to match_array(%w[small medium large])
+      end
+
+      it "preserves additional properties" do
+        definition = described_class.new([
+          {
+            value: "small",
+            label: "Small",
+            icon: "arrow_down",
+          },
+        ])
+        expect(definition.data[:small][:icon]).to eq("arrow_down")
+      end
+
+      it "defaults label to value when label is missing" do
+        definition = described_class.new([
+          {
+            value: "small",
+          },
+        ])
+        expect(definition.data[:small][:label]).to eq("small")
+      end
+    end
+
+    context "when data is an Array of Hashes with integer values" do
+      let(:data) do
+        [
+          {
+            value: 1,
+            label: "Low",
+          },
+          {
+            value: 2,
+            label: "Medium",
+          },
+          {
+            value: 3,
+            label: "High",
+          },
+        ]
+      end
+
+      it "converts to hash keyed by symbolized value" do
+        expect(subject.data).to match({
+          "1": {
+            value: 1,
+            label: "Low",
+          },
+          "2": {
+            value: 2,
+            label: "Medium",
+          },
+          "3": {
+            value: 3,
+            label: "High",
+          },
+        })
+      end
+
+      it "creates entries for all array elements" do
+        expect(subject.data.keys).to match_array(%w[1 2 3])
+      end
+    end
+
     context "when data is a String" do
       let(:data) { "invalid" }
 

@@ -8,7 +8,7 @@ RSpec.describe EnumFields::Base, "Error Handling" do
 
     it "raises an error" do
       expect do
-        TestModel.enum_field :sample_column, definitions
+        TestModel.enum_field :status, definitions
       end.to raise_error(EnumFields::MissingDefinitionsError)
     end
   end
@@ -18,7 +18,7 @@ RSpec.describe EnumFields::Base, "Error Handling" do
 
     it "raises an error" do
       expect do
-        TestModel.enum_field :sample_column, definitions
+        TestModel.enum_field :status, definitions
       end.to raise_error(EnumFields::InvalidDefinitionsError)
     end
   end
@@ -26,18 +26,18 @@ RSpec.describe EnumFields::Base, "Error Handling" do
   context "when :definitions is missing :value property" do
     let(:definitions) do
       {
-        value1: {
-          label: "value1",
+        draft: {
+          label: "Draft",
         },
-        value2: {
-          label: "value2",
+        published: {
+          label: "Published",
         },
       }
     end
 
     it "raises an error" do
       expect do
-        TestModel.enum_field :sample_column, definitions
+        TestModel.enum_field :status, definitions
       end.to raise_error(EnumFields::InvalidDefinitionsError)
     end
   end

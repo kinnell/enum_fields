@@ -5,38 +5,38 @@ RSpec.describe EnumFields::Base, "Additional Properties" do
 
   let(:definitions) do
     {
-      value1: {
-        value: "value1",
-        label: "Value 1",
-        additional_property: "additional_value1",
+      draft: {
+        value: "draft",
+        label: "Draft",
+        description: "Content is being worked on",
       },
-      value2: {
-        value: "value2",
-        label: "Value 2",
-        additional_property: "additional_value2",
+      published: {
+        value: "published",
+        label: "Published",
+        description: "Content is live",
       },
     }
   end
 
   before do
-    TestModel.enum_field :sample_column, definitions
+    TestModel.enum_field :status, definitions
   end
 
   describe "Model.<accessor>s" do
     it "returns definitions as a hash with the additional properties" do
-      expect(TestModel.sample_columns).to match(definitions)
+      expect(TestModel.statuses).to match(definitions)
     end
   end
 
   describe "Instance.<accessor>_metadata" do
     it "returns the metadata of the accessor with the additional properties" do
-      expect(record.sample_column_metadata).to match(definitions[:value1])
+      expect(record.status_metadata).to match(definitions[:draft])
     end
   end
 
   describe "Instance.<accessor>_<property>" do
     it "returns the value of the additional property" do
-      expect(record.sample_column_additional_property).to eq(definitions[:value1][:additional_property])
+      expect(record.status_description).to eq(definitions[:draft][:description])
     end
   end
 end
