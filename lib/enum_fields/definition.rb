@@ -37,21 +37,44 @@ module EnumFields
         when Hash
           input.with_indifferent_access
         when Array
-          input.to_h do |value|
-            [value, { value: value }]
-          end.with_indifferent_access
+          build_from_array(input)
         else
           raise InvalidDefinitionsError, "Invalid definitions format: #{input.class}"
         end
       end
 
       output.transform_values do |metadata|
+        metadata = metadata.with_indifferent_access
+
         if metadata.key?(:label)
           metadata
         else
-          metadata.merge(label: metadata[:value])
+          metadata.merge(label: metadata[:value].to_s)
         end
       end
+    end
+
+    def build_from_array(input)
+      input.to_h do |element|
+        metadata = normalize_item(element)
+
+        [normalize_key(metadata[:value]), metadata]
+      end.with_indifferent_access
+    end
+
+    def normalize_item(item)
+      if item.is_a?(Hash)
+        item.with_indifferent_access
+      else
+        {
+          value: item,
+          label: item.to_s,
+        }
+      end
+    end
+
+    def normalize_key(value)
+      value.to_s.to_sym
     end
 
     def valid_hash?(data)
