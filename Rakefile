@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
-require "bundler/gem_tasks"
+require "bundler"
+
+namespace :gem_tasks do
+  Bundler::GemHelper.install_tasks
+end
 
 task default: :ci
 
@@ -20,6 +24,11 @@ end
 desc "Run ruby linter"
 task :lint do
   exec "bundle exec rubocop"
+end
+
+desc "Release the gem"
+task :release do
+  exec "./script/release"
 end
 
 desc "Start an IRB console"

@@ -75,6 +75,6 @@ git commit -m "Bump version to $new_version"
 git push
 echo "✓ Committed and pushed"
 
-rake release || true
+rake gem_tasks:release || true
 gem push "pkg/enum_fields-${new_version}.gem"
 echo "✓ Released enum_fields v${new_version}"

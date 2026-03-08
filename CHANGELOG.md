@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Polymorphic validation now respects `nullable` option and falls back to the association's `optional` setting
 - Update release script to keep CHANGELOG.md up to date
 - Add Continuous Integration suite to run tests and style checks
+- Update rake release to run release script
 
 ## [0.3.2] - 2026-03-08
 
