@@ -8,6 +8,8 @@ set -euo pipefail
 readonly RED='\033[0;31m'
 readonly RESET='\033[0m'
 readonly VERSION_FILE="lib/enum_fields/version.rb"
+readonly CHANGELOG_FILE="CHANGELOG.md"
+readonly UNRELEASED_HEADER="## [X.X.X] - YYYY-MM-DD"
 
 ################################################################################
 ## Cleanup
@@ -40,6 +42,14 @@ function update_version_file() {
   sed -i '' "s/VERSION = \"$old_version\"/VERSION = \"$new_version\"/" "$VERSION_FILE"
 }
 
+function update_changelog() {
+  local new_version="$1"
+  local today
+  today=$(date +%Y-%m-%d)
+
+  perl -i -pe "s/\\Q${UNRELEASED_HEADER}\\E/${UNRELEASED_HEADER}\n\n## [${new_version}] - ${today}/" "$CHANGELOG_FILE"
+}
+
 ################################################################################
 ## Execution
 ################################################################################
@@ -57,7 +67,10 @@ gum confirm "Release enum_fields v${new_version}?" || exit 0
 update_version_file "$old_version" "$new_version"
 echo "✓ Updated $VERSION_FILE to $new_version"
 
-git add "$VERSION_FILE"
+update_changelog "$new_version"
+echo "✓ Updated $CHANGELOG_FILE for $new_version"
+
+git add "$VERSION_FILE" "$CHANGELOG_FILE"
 git commit -m "Bump version to $new_version"
 git push
 echo "✓ Committed and pushed"
