@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [X.X.X] - YYYY-MM-DD
 
+## [0.4.0] - 2026-03-08
+
 - Extract out Configuration to define global configuration for all enum fields
 - Rename `validate` option to `validatable` to better reflect its purpose
 - Rename `scope` option to `scopeable` to better reflect its purpose
