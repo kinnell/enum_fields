@@ -103,16 +103,6 @@ This automatically generates:
 }
 ```
 
-#### Custom Column Mapping
-
-If your accessor name differs from your column name:
-
-```ruby
-class User < ApplicationRecord
-  enum_field :role, definitions, column: :user_role
-end
-```
-
 ### Generated Methods
 
 For an enum field defined as:
@@ -226,6 +216,82 @@ Campaign.completed_stage
 #### Validation
 
 Automatically validates that the column value is included in the defined values (with `allow_nil: true`).
+
+### Options
+
+#### `column`
+
+Map the accessor to a different database column name:
+
+```ruby
+enum_field :role, definitions, column: :user_role
+```
+
+#### `scope`
+
+Controls whether query scopes are generated. Defaults to `true`. Set to `false` to skip scope generation:
+
+```ruby
+enum_field :speed, definitions, scope: false
+```
+
+#### `validate`
+
+Controls whether inclusion validation is added. Defaults to `true`. Set to `false` to skip validation:
+
+```ruby
+enum_field :speed, definitions, validate: false
+```
+
+### Virtual Attributes
+
+`enum_field` works with computed/virtual attributes that aren't backed by a database column. Define a method on the model and use `scope: false` and `validate: false` since those features require a real column:
+
+```ruby
+class Segment < ApplicationRecord
+  enum_field :size_category, {
+    small: {
+      value: "small",
+      label: "Small (< 100)",
+    },
+    medium: {
+      value: "medium",
+      label: "Medium (< 1K)",
+    },
+    large: {
+      value: "large",
+      label: "Large (< 10K)",
+    },
+  }, scope: false, validate: false
+
+  def size_category
+    case profiles_count
+    when ...100
+      "small"
+    when 100...1_000
+      "medium"
+    else
+      "large"
+    end
+  end
+end
+```
+
+All instance methods work as expected:
+
+```ruby
+segment.size_category           # "small"
+segment.size_category_label     # "Small (< 100)"
+segment.size_category_metadata  # { value: "small", label: "Small (< 100)" }
+segment.small_size_category?    # true
+```
+
+Class methods (options, values, counts) also work normally:
+
+```ruby
+Segment.size_category_options # [["Small (< 100)", "small"], ["Medium (< 1K)", "medium"], ...]
+Segment.size_category_values  # ["small", "medium", "large"]
+```
 
 ### Custom Properties
 

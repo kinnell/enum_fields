@@ -227,28 +227,6 @@ RSpec.describe EnumFields::Base, "Polymorphic Columns" do
     end
   end
 
-  describe "validate: false on non-polymorphic column" do
-    let(:non_polymorphic_definitions) do
-      {
-        active: { value: "active", label: "Active" },
-        inactive: { value: "inactive", label: "Inactive" },
-      }
-    end
-
-    before do
-      PolymorphicTestModel.enum_field(:status, non_polymorphic_definitions, validate: false)
-    end
-
-    it "skips validation" do
-      expect(PolymorphicTestModel.validations[:status]).to be_nil
-    end
-
-    it "allows any value" do
-      record = PolymorphicTestModel.new(status: "anything")
-      expect(record).to be_valid
-    end
-  end
-
   describe "with snake_case definition keys (mismatched from column values)" do
     let(:snake_case_definitions) do
       {

@@ -104,7 +104,7 @@ module EnumFields
       column_name = @column_name
 
       @model_class.define_method("#{accessor}_metadata") do
-        column_value = attributes[column_name.to_s]
+        column_value = public_send(column_name)
         return nil if column_value.nil?
 
         definitions = self.class.enum_field_for(accessor)
@@ -120,7 +120,7 @@ module EnumFields
 
       @definition.properties.each do |property|
         @model_class.define_method("#{accessor}_#{property}") do
-          column_value = attributes[column_name.to_s]
+          column_value = public_send(column_name)
           return nil if column_value.nil?
 
           definitions = self.class.enum_field_for(accessor)
@@ -145,6 +145,8 @@ module EnumFields
     end
 
     def define_scopes!
+      return unless column_scopeable?
+
       column_name = @column_name
 
       @definition.each do |key, metadata|
@@ -192,10 +194,6 @@ module EnumFields
       end
     end
 
-    def column_validatable?
-      @definition.present? && @options.fetch(:validate, true)
-    end
-
     def column_polymorphic_association_name
       return nil unless @model_class.respond_to?(:reflect_on_all_associations)
 
@@ -204,6 +202,14 @@ module EnumFields
       end
 
       reflection&.name
+    end
+
+    def column_scopeable?
+      @definition.present? && @options.fetch(:scope, true)
+    end
+
+    def column_validatable?
+      @definition.present? && @options.fetch(:validate, true)
     end
   end
 end
