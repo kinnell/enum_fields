@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [X.X.X] - YYYY-MM-DD
 
+- Extract out Configuration to define global configuration for all enum fields
+- Rename `validate` option to `validatable` to better reflect its purpose
+- Rename `scope` option to `scopeable` to better reflect its purpose
+- Rename `allow_nil` option to `nullable` to better reflect its purpose
+- Add `inquirable` option to control the generation of inquiry methods
+- Polymorphic validation now respects `nullable` option and falls back to the association's `optional` setting
 - Update release script to keep CHANGELOG.md up to date
 
 ## [0.3.2] - 2026-03-08

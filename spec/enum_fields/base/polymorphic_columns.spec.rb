@@ -170,9 +170,57 @@ RSpec.describe EnumFields::Base, "Polymorphic Columns" do
       context "when record_type is nil" do
         let(:record) { PolymorphicTestModel.new(record_type: nil) }
 
-        it "is valid (allows nil)" do
-          expect(record).to be_valid
+        it "is invalid (association is required by default)" do
+          expect(record).to be_invalid
         end
+      end
+    end
+  end
+
+  describe "optional polymorphic association" do
+    before do
+      PolymorphicTestModel.belongs_to(:record, polymorphic: true, optional: true)
+      PolymorphicTestModel.enum_field(:record_type, definitions)
+    end
+
+    it "allows nil when record_type is nil" do
+      record = PolymorphicTestModel.new(record_type: nil)
+      expect(record).to be_valid
+    end
+
+    it "validates present values" do
+      record = PolymorphicTestModel.new(record_type: "TypeA")
+      expect(record).to be_valid
+    end
+
+    it "rejects invalid present values" do
+      record = PolymorphicTestModel.new(record_type: "InvalidType")
+      expect(record).to be_invalid
+    end
+  end
+
+  describe "nullable override on polymorphic" do
+    context "when association is required but nullable: true" do
+      before do
+        PolymorphicTestModel.belongs_to(:record, polymorphic: true)
+        PolymorphicTestModel.enum_field(:record_type, definitions, nullable: true)
+      end
+
+      it "allows nil despite required association" do
+        record = PolymorphicTestModel.new(record_type: nil)
+        expect(record).to be_valid
+      end
+    end
+
+    context "when association is optional but nullable: false" do
+      before do
+        PolymorphicTestModel.belongs_to(:record, polymorphic: true, optional: true)
+        PolymorphicTestModel.enum_field(:record_type, definitions, nullable: false)
+      end
+
+      it "rejects nil despite optional association" do
+        record = PolymorphicTestModel.new(record_type: nil)
+        expect(record).to be_invalid
       end
     end
   end
@@ -210,10 +258,10 @@ RSpec.describe EnumFields::Base, "Polymorphic Columns" do
     end
   end
 
-  describe "validate: false option" do
+  describe "validatable: false option" do
     before do
       PolymorphicTestModel.belongs_to(:record, polymorphic: true)
-      PolymorphicTestModel.enum_field(:record_type, definitions, validate: false)
+      PolymorphicTestModel.enum_field(:record_type, definitions, validatable: false)
     end
 
     it "skips all validation" do

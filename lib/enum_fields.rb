@@ -8,6 +8,7 @@ require "active_support/core_ext/array/extract_options"
 require "active_support/inflector"
 require "active_record"
 
+require_relative "enum_fields/configuration"
 require_relative "enum_fields/errors"
 require_relative "enum_fields/version"
 require_relative "enum_fields/base"
@@ -20,6 +21,18 @@ module EnumFields
   autoload :EnumField
   autoload :Namespace
   autoload :Registry
+
+  def self.configuration
+    @configuration ||= Configuration.new
+  end
+
+  def self.configure
+    yield(configuration)
+  end
+
+  def self.reset_configuration!
+    @configuration = Configuration.new
+  end
 
   def self.registry
     @registry ||= Registry.new

@@ -16,9 +16,9 @@ RSpec.describe EnumFields::Base, "Configuration" do
     }
   end
 
-  describe "scope: false" do
+  describe "scopeable: false" do
     before do
-      TestModel.enum_field :status, definitions, scope: false
+      TestModel.enum_field :status, definitions, scopeable: false
     end
 
     it "does not define scope methods" do
@@ -27,7 +27,7 @@ RSpec.describe EnumFields::Base, "Configuration" do
     end
   end
 
-  describe "scope: true (default)" do
+  describe "scopeable: true (default)" do
     before do
       TestModel.enum_field :status, definitions
     end
@@ -38,9 +38,9 @@ RSpec.describe EnumFields::Base, "Configuration" do
     end
   end
 
-  describe "validate: false" do
+  describe "validatable: false" do
     before do
-      TestModel.enum_field :status, definitions, validate: false
+      TestModel.enum_field :status, definitions, validatable: false
     end
 
     it "does not add validations" do
@@ -53,7 +53,7 @@ RSpec.describe EnumFields::Base, "Configuration" do
     end
   end
 
-  describe "validate: true (default)" do
+  describe "validatable: true (default)" do
     before do
       TestModel.enum_field :status, definitions
     end
@@ -75,6 +75,55 @@ RSpec.describe EnumFields::Base, "Configuration" do
     it "allows nil" do
       record = TestModel.new(status: nil)
       expect(record).to be_valid
+    end
+  end
+
+  describe "nullable: false" do
+    before do
+      TestModel.enum_field :status, definitions, nullable: false
+    end
+
+    it "rejects nil values" do
+      record = TestModel.new(status: nil)
+      expect(record).to be_invalid
+    end
+
+    it "accepts valid values" do
+      record = TestModel.new(status: "draft")
+      expect(record).to be_valid
+    end
+  end
+
+  describe "nullable: true (default)" do
+    before do
+      TestModel.enum_field :status, definitions
+    end
+
+    it "allows nil values" do
+      record = TestModel.new(status: nil)
+      expect(record).to be_valid
+    end
+  end
+
+  describe "inquirable: false" do
+    before do
+      TestModel.enum_field :status, definitions, inquirable: false
+    end
+
+    it "does not define inquiry methods" do
+      expect(TestModel.method_defined?(:draft_status?)).to be false
+      expect(TestModel.method_defined?(:published_status?)).to be false
+    end
+  end
+
+  describe "inquirable: true (default)" do
+    before do
+      TestModel.enum_field :status, definitions
+    end
+
+    it "defines inquiry methods" do
+      expect(TestModel.method_defined?(:draft_status?)).to be true
+      expect(TestModel.method_defined?(:published_status?)).to be true
     end
   end
 end

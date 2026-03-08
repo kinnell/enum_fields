@@ -28,7 +28,7 @@ RSpec.describe EnumFields::Base, "Virtual Attributes" do
         "TestModel"
       end
 
-      enum_field :speed, defs, scope: false, validate: false
+      enum_field :speed, defs, scopeable: false, validatable: false
 
       define_method(:speed) do
         "fast"
@@ -131,5 +131,4 @@ RSpec.describe EnumFields::Base, "Virtual Attributes" do
       end
     end
   end
-
 end

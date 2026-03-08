@@ -21,6 +21,45 @@ And then execute:
 bundle install
 ```
 
+## Configuration
+
+### Global Configuration
+
+Configure default behavior for all `enum_field` declarations:
+
+```ruby
+# config/initializers/enum_fields.rb
+EnumFields.configure do |config|
+  config.scopeable = true    # default: true
+  config.validatable = true  # default: true
+  config.nullable = true     # default: true
+  config.inquirable = true   # default: true
+end
+```
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `scopeable` | `true` | Generate query scopes for each enum value |
+| `validatable` | `true` | Add inclusion validation for enum values |
+| `nullable` | `true` | Allow `nil` values in validation (polymorphic columns derive this from the association's `optional` flag instead) |
+| `inquirable` | `true` | Generate `?` inquiry methods for each enum value |
+
+Individual `enum_field` options override global configuration:
+
+```ruby
+EnumFields.configure do |config|
+  config.scopeable = false
+end
+
+class Campaign < ApplicationRecord
+  # Uses global scopeable: false
+  enum_field :stage, definitions
+
+  # Overrides global — scopes are generated for this field
+  enum_field :priority, definitions, scopeable: true
+end
+```
+
 ## Usage
 
 ### Basic Setup
@@ -215,7 +254,7 @@ Campaign.completed_stage
 
 #### Validation
 
-Automatically validates that the column value is included in the defined values (with `allow_nil: true`).
+Automatically validates that the column value is included in the defined values. By default, `nil` values are allowed (see [`nullable`](#nullable) option).
 
 ### Options
 
@@ -227,25 +266,62 @@ Map the accessor to a different database column name:
 enum_field :role, definitions, column: :user_role
 ```
 
-#### `scope`
+#### `scopeable`
 
 Controls whether query scopes are generated. Defaults to `true`. Set to `false` to skip scope generation:
 
 ```ruby
-enum_field :speed, definitions, scope: false
+enum_field :speed, definitions, scopeable: false
 ```
 
-#### `validate`
+#### `validatable`
 
 Controls whether inclusion validation is added. Defaults to `true`. Set to `false` to skip validation:
 
 ```ruby
-enum_field :speed, definitions, validate: false
+enum_field :speed, definitions, validatable: false
+```
+
+#### `nullable`
+
+Controls whether `nil` values pass validation. Defaults to `true`. Set to `false` to require a value:
+
+```ruby
+enum_field :speed, definitions, nullable: false
+```
+
+For polymorphic columns, nullability is derived from the association's `optional` flag rather than the global default. A `belongs_to` with `optional: true` allows nil; without it, nil is rejected. An explicit `nullable` option on the field still takes precedence:
+
+```ruby
+class Comment < ApplicationRecord
+  belongs_to :commentable, polymorphic: true, optional: true
+
+  # nil allowed — derived from optional: true
+  enum_field :commentable_type, definitions
+end
+
+class Attachment < ApplicationRecord
+  belongs_to :attachable, polymorphic: true
+
+  # nil rejected — association is required by default
+  enum_field :attachable_type, definitions
+
+  # Override: allow nil despite required association
+  enum_field :attachable_type, definitions, nullable: true
+end
+```
+
+#### `inquirable`
+
+Controls whether `?` inquiry methods are generated. Defaults to `true`. Set to `false` to skip:
+
+```ruby
+enum_field :speed, definitions, inquirable: false
 ```
 
 ### Virtual Attributes
 
-`enum_field` works with computed/virtual attributes that aren't backed by a database column. Define a method on the model and use `scope: false` and `validate: false` since those features require a real column:
+`enum_field` works with computed/virtual attributes that aren't backed by a database column. Define a method on the model and use `scopeable: false` and `validatable: false` since those features require a real column:
 
 ```ruby
 class Segment < ApplicationRecord
@@ -262,7 +338,7 @@ class Segment < ApplicationRecord
       value: "large",
       label: "Large (< 10K)",
     },
-  }, scope: false, validate: false
+  }, scopeable: false, validatable: false
 
   def size_category
     case profiles_count

@@ -133,6 +133,8 @@ module EnumFields
     end
 
     def define_inquiry_methods!
+      return unless column_inquirable?
+
       accessor = @accessor
       column_name = @column_name
 
@@ -158,8 +160,9 @@ module EnumFields
     def define_validation!
       return unless column_validatable?
 
-      if column_polymorphic_association_name.present?
-        define_polymorphic_validation!
+      reflection = polymorphic_reflection
+      if reflection
+        define_polymorphic_validation!(reflection)
       else
         define_standard_validation!
       end
@@ -167,15 +170,17 @@ module EnumFields
 
     def define_standard_validation!
       valid_values = @definition.values.pluck(:value)
+      allow_nil = resolve_option(:nullable)
 
       @model_class.validates(@column_name, inclusion: {
         in: valid_values,
-        allow_nil: true,
+        allow_nil: allow_nil,
       })
     end
 
-    def define_polymorphic_validation!
-      association_name = column_polymorphic_association_name
+    def define_polymorphic_validation!(reflection)
+      association_name = reflection.name
+      allow_nil = resolve_polymorphic_nullable(reflection)
       column_name = @column_name
       accessor = @accessor
 
@@ -187,29 +192,43 @@ module EnumFields
           errors.add(association_name, "must be one of: #{valid_values.join(', ')}") unless valid_values.include?(association_obj.class.name)
         else
           column_value = attributes[column_name.to_s]
-          next if column_value.nil?
+          next if column_value.nil? && allow_nil
 
           errors.add(column_name, "must be one of: #{valid_values.join(', ')}") unless valid_values.include?(column_value)
         end
       end
     end
 
-    def column_polymorphic_association_name
+    def polymorphic_reflection
       return nil unless @model_class.respond_to?(:reflect_on_all_associations)
 
-      reflection = @model_class.reflect_on_all_associations(:belongs_to).find do |r|
+      @model_class.reflect_on_all_associations(:belongs_to).find do |r|
         r.options[:polymorphic] && "#{r.name}_type" == @column_name.to_s
       end
+    end
 
-      reflection&.name
+    def resolve_polymorphic_nullable(reflection)
+      return @options[:nullable] if @options.key?(:nullable)
+
+      reflection.options.fetch(:optional, false)
     end
 
     def column_scopeable?
-      @definition.present? && @options.fetch(:scope, true)
+      @definition.present? && resolve_option(:scopeable)
     end
 
     def column_validatable?
-      @definition.present? && @options.fetch(:validate, true)
+      @definition.present? && resolve_option(:validatable)
+    end
+
+    def column_inquirable?
+      @definition.present? && resolve_option(:inquirable)
+    end
+
+    def resolve_option(key)
+      return @options[key] if @options.key?(key)
+
+      EnumFields.configuration.public_send(key)
     end
   end
 end
