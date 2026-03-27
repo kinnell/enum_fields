@@ -4,7 +4,7 @@ require "pathname"
 
 require "enum_fields"
 
-SPEC_PATH = Pathname.getwd.join("spec").freeze
+SPEC_PATH = Pathname.new(__dir__).freeze
 SPEC_PATH.glob("support/**/*.rb").each { |file| require file }
 
 RSpec.configure do |config|
