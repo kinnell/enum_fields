@@ -62,8 +62,8 @@ function run_step() {
 
   print_heading "$title" "$command"
 
-  local start_time passed
-  start_time=$(date +%s%N)
+  local passed
+  SECONDS=0
 
   if eval "$command"; then
     passed="true"
@@ -73,12 +73,7 @@ function run_step() {
 
   RESULTS+=("$passed")
 
-  local end_time elapsed_ms duration
-  end_time=$(date +%s%N)
-  elapsed_ms=$(( (end_time - start_time) / 1000000 ))
-  duration="$(echo "scale=2; ${elapsed_ms} / 1000" | bc)s"
-
-  print_result "$title" "$duration" "$passed"
+  print_result "$title" "${SECONDS}s" "$passed"
 }
 
 function all_passed() {
@@ -96,18 +91,14 @@ function all_passed() {
 
 print_banner "Continuous Integration" "Running tests and style checks"
 
-start_time=$(date +%s%N)
+SECONDS=0
 
 run_step "Tests: RSpec" "bundle exec rspec"
 run_step "Style: Ruby" "bundle exec rubocop"
 
-end_time=$(date +%s%N)
-elapsed_ms=$(( (end_time - start_time) / 1000000 ))
-duration="$(echo "scale=2; ${elapsed_ms} / 1000" | bc)s"
-
 if all_passed; then
-  print_result "Continuous Integration" "$duration" "true"
+  print_result "Continuous Integration" "${SECONDS}s" "true"
 else
-  print_result "Continuous Integration" "$duration" "false"
+  print_result "Continuous Integration" "${SECONDS}s" "false"
   exit 1
 fi
