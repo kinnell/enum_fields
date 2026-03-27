@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [X.X.X] - YYYY-MM-DD
 
+## [0.4.1] - 2026-03-26
+
 - Update `bin/ci` and `bin/release` to use new formatting functions
 - Add `--quiet` flag to `bin/ci` to suppress output
 - Add `--dry-run` flag to `bin/release` to perform a dry run of the release process
