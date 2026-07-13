@@ -4,7 +4,7 @@ Enhanced enum-like fields for ActiveRecord models with metadata support
 
 ## Requirements
 
-- Ruby >= 2.7.6
+- Ruby >= 3.1
 - Rails >= 6.0 (ActiveRecord and ActiveSupport)
 
 ## Installation
