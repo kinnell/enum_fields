@@ -11,12 +11,10 @@ RSpec.describe EnumFields::Base, "Array Definitions" do
     end
 
     describe "Model.<accessor>s" do
-      it "defines definitions method on the class" do
-        expect(TestModel).to respond_to(:colors)
-      end
+      let(:output) { TestModel.colors }
 
       it "returns definitions as a hash with :value & :label properties" do
-        expect(TestModel.colors).to match({
+        expect(output).to match({
           red: {
             value: "red",
             label: "red",
@@ -42,12 +40,10 @@ RSpec.describe EnumFields::Base, "Array Definitions" do
     end
 
     describe "Model.<accessor>s" do
-      it "defines definitions method on the class" do
-        expect(TestModel).to respond_to(:quantities)
-      end
+      let(:output) { TestModel.quantities }
 
       it "returns definitions as a hash with :value & :label properties" do
-        expect(TestModel.quantities).to match({
+        expect(output).to match({
           "1": {
             value: 1,
             label: "1",
@@ -88,12 +84,10 @@ RSpec.describe EnumFields::Base, "Array Definitions" do
     end
 
     describe "Model.<accessor>s" do
-      it "defines definitions method on the class" do
-        expect(TestModel).to respond_to(:sizes)
-      end
+      let(:output) { TestModel.sizes }
 
       it "returns definitions keyed by symbolized value" do
-        expect(TestModel.sizes).to match({
+        expect(output).to match({
           small: {
             value: "small",
             label: "Small",
@@ -111,8 +105,10 @@ RSpec.describe EnumFields::Base, "Array Definitions" do
     end
 
     describe "Model.<accessor>_values" do
+      let(:output) { TestModel.size_values }
+
       it "returns the values" do
-        expect(TestModel.size_values).to match_array(%w[small medium large])
+        expect(output).to match_array(%w[small medium large])
       end
     end
   end
@@ -140,12 +136,10 @@ RSpec.describe EnumFields::Base, "Array Definitions" do
     end
 
     describe "Model.<accessor>s" do
-      it "defines definitions method on the class" do
-        expect(TestModel).to respond_to(:difficulties)
-      end
+      let(:output) { TestModel.difficulties }
 
       it "returns definitions keyed by symbolized value" do
-        expect(TestModel.difficulties).to match({
+        expect(output).to match({
           "1": {
             value: 1,
             label: "Low",
@@ -163,8 +157,10 @@ RSpec.describe EnumFields::Base, "Array Definitions" do
     end
 
     describe "Model.<accessor>_values" do
+      let(:output) { TestModel.difficulty_values }
+
       it "returns the values" do
-        expect(TestModel.difficulty_values).to match_array([1, 2, 3])
+        expect(output).to match_array([1, 2, 3])
       end
     end
   end

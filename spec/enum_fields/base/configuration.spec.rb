@@ -16,114 +16,176 @@ RSpec.describe EnumFields::Base, "Configuration" do
     }
   end
 
-  describe "scopeable: false" do
-    before do
-      TestModel.enum_field :status, definitions, scopeable: false
+  describe "Handling :scopeable option" do
+    context "when false" do
+      before { TestModel.enum_field :status, definitions, scopeable: false }
+
+      let(:scope_calls) do
+        definitions.keys.map { |key| -> { TestModel.public_send("#{key}_status") } }
+      end
+
+      it "does not define scope methods" do
+        expect(scope_calls).to all(raise_error(NoMethodError))
+      end
     end
 
-    it "does not define scope methods" do
-      expect(TestModel).not_to respond_to(:draft_status)
-      expect(TestModel).not_to respond_to(:published_status)
-    end
-  end
+    context "when true (default)" do
+      before { TestModel.enum_field :status, definitions }
 
-  describe "scopeable: true (default)" do
-    before do
-      TestModel.enum_field :status, definitions
-    end
+      let(:scope_queries) do
+        definitions.map do |key, metadata|
+          [TestModel.public_send("#{key}_status").to_sql, metadata[:value]]
+        end
+      end
 
-    it "defines scope methods" do
-      expect(TestModel).to respond_to(:draft_status)
-      expect(TestModel).to respond_to(:published_status)
-    end
-  end
-
-  describe "validatable: false" do
-    before do
-      TestModel.enum_field :status, definitions, validatable: false
-    end
-
-    it "does not add validations" do
-      expect(TestModel.validations[:status]).to be_nil
-    end
-
-    it "allows any value" do
-      record = TestModel.new(status: "anything")
-      expect(record).to be_valid
+      it "defines a scope for each definition" do
+        expect(scope_queries).to all(satisfy { |sql, value| sql.include?("\"status\" = '#{value}'") })
+      end
     end
   end
 
-  describe "validatable: true (default)" do
-    before do
-      TestModel.enum_field :status, definitions
+  describe "Handling :validatable option" do
+    context "when false" do
+      before { TestModel.enum_field :status, definitions, validatable: false }
+
+      let(:record) { TestModel.new(status: "anything") }
+
+      before { record.valid? }
+
+      it "allows any value" do
+        expect(record).to be_valid
+      end
+
+      it "does not add an error on the accessor" do
+        expect(record.errors[:status]).to be_empty
+      end
     end
 
-    it "adds inclusion validation" do
-      expect(TestModel.validations[:status]).to be_present
-    end
+    context "when true (default)" do
+      before { TestModel.enum_field :status, definitions }
 
-    it "rejects invalid values" do
-      record = TestModel.new(status: "archived")
-      expect(record).to be_invalid
-    end
+      context "with an invalid value" do
+        let(:record) { TestModel.new(status: "archived") }
 
-    it "accepts valid values" do
-      record = TestModel.new(status: "draft")
-      expect(record).to be_valid
-    end
+        before { record.valid? }
 
-    it "allows nil" do
-      record = TestModel.new(status: nil)
-      expect(record).to be_valid
+        it "is invalid" do
+          expect(record).to be_invalid
+        end
+
+        it "adds an error on the accessor" do
+          expect(record.errors[:status]).not_to be_empty
+        end
+      end
+
+      context "with a valid value" do
+        let(:record) { TestModel.new(status: definitions.values.first[:value]) }
+
+        before { record.valid? }
+
+        it "is valid" do
+          expect(record).to be_valid
+        end
+
+        it "does not add an error on the accessor" do
+          expect(record.errors[:status]).to be_empty
+        end
+      end
+
+      context "with a nil value" do
+        let(:record) { TestModel.new(status: nil) }
+
+        before { record.valid? }
+
+        it "is valid" do
+          expect(record).to be_valid
+        end
+
+        it "does not add an error on the accessor" do
+          expect(record.errors[:status]).to be_empty
+        end
+      end
     end
   end
 
-  describe "nullable: false" do
-    before do
-      TestModel.enum_field :status, definitions, nullable: false
+  describe "Handling :nullable option" do
+    context "when false" do
+      before { TestModel.enum_field :status, definitions, nullable: false }
+
+      context "with a nil value" do
+        let(:record) { TestModel.new(status: nil) }
+
+        before { record.valid? }
+
+        it "is invalid" do
+          expect(record).to be_invalid
+        end
+
+        it "adds an error on the accessor" do
+          expect(record.errors[:status]).not_to be_empty
+        end
+      end
+
+      context "with a valid value" do
+        let(:record) { TestModel.new(status: definitions.values.first[:value]) }
+
+        before { record.valid? }
+
+        it "is valid" do
+          expect(record).to be_valid
+        end
+
+        it "does not add an error on the accessor" do
+          expect(record.errors[:status]).to be_empty
+        end
+      end
     end
 
-    it "rejects nil values" do
-      record = TestModel.new(status: nil)
-      expect(record).to be_invalid
-    end
+    context "when true (default)" do
+      before { TestModel.enum_field :status, definitions }
 
-    it "accepts valid values" do
-      record = TestModel.new(status: "draft")
-      expect(record).to be_valid
+      context "with a nil value" do
+        let(:record) { TestModel.new(status: nil) }
+
+        before { record.valid? }
+
+        it "is valid" do
+          expect(record).to be_valid
+        end
+
+        it "does not add an error on the accessor" do
+          expect(record.errors[:status]).to be_empty
+        end
+      end
     end
   end
 
-  describe "nullable: true (default)" do
-    before do
-      TestModel.enum_field :status, definitions
+  describe "Handling :inquirable option" do
+    context "when false" do
+      before { TestModel.enum_field :status, definitions, inquirable: false }
+
+      let(:inquiry_calls) do
+        definitions.keys.map { |key| -> { record.public_send("#{key}_status?") } }
+      end
+
+      it "does not define inquiry methods" do
+        expect(inquiry_calls).to all(raise_error(NoMethodError))
+      end
     end
 
-    it "allows nil values" do
-      record = TestModel.new(status: nil)
-      expect(record).to be_valid
-    end
-  end
+    context "when true (default)" do
+      before { TestModel.enum_field :status, definitions }
 
-  describe "inquirable: false" do
-    before do
-      TestModel.enum_field :status, definitions, inquirable: false
-    end
+      let(:output) do
+        definitions.keys.to_h { |key| [key, record.public_send("#{key}_status?")] }
+      end
+      let(:expected_output) do
+        definitions.transform_values { |metadata| record.status == metadata[:value] }
+      end
 
-    it "does not define inquiry methods" do
-      expect(TestModel.method_defined?(:draft_status?)).to be false
-      expect(TestModel.method_defined?(:published_status?)).to be false
-    end
-  end
-
-  describe "inquirable: true (default)" do
-    before do
-      TestModel.enum_field :status, definitions
-    end
-
-    it "defines inquiry methods" do
-      expect(TestModel.method_defined?(:draft_status?)).to be true
-      expect(TestModel.method_defined?(:published_status?)).to be true
+      it "returns whether the accessor matches each definition" do
+        expect(output).to eq(expected_output)
+      end
     end
   end
 end

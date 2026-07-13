@@ -23,20 +23,26 @@ RSpec.describe EnumFields::Base, "Additional Properties" do
   end
 
   describe "Model.<accessor>s" do
+    let(:output) { TestModel.statuses }
+
     it "returns definitions as a hash with the additional properties" do
-      expect(TestModel.statuses).to match(definitions)
+      expect(output).to match(definitions)
     end
   end
 
   describe "Instance.<accessor>_metadata" do
+    let(:output) { record.status_metadata }
+
     it "returns the metadata of the accessor with the additional properties" do
-      expect(record.status_metadata).to match(definitions[:draft])
+      expect(output).to match(definitions[:draft])
     end
   end
 
   describe "Instance.<accessor>_<property>" do
+    let(:output) { record.status_description }
+
     it "returns the value of the additional property" do
-      expect(record.status_description).to eq(definitions[:draft][:description])
+      expect(output).to eq(definitions[:draft][:description])
     end
   end
 end

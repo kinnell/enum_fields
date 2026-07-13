@@ -3,47 +3,91 @@
 RSpec.describe EnumFields::Configuration do
   subject(:configuration) { described_class.new }
 
-  describe "defaults" do
-    it "sets :scopeable to true" do
-      expect(configuration.scopeable).to be true
+  describe "#initialize" do
+    describe "#scopeable" do
+      let(:output) { configuration.scopeable }
+
+      it "is enabled" do
+        expect(output).to be(true)
+      end
     end
 
-    it "sets :validatable to true" do
-      expect(configuration.validatable).to be true
+    describe "#validatable" do
+      let(:output) { configuration.validatable }
+
+      it "is enabled" do
+        expect(output).to be(true)
+      end
     end
 
-    it "sets :nullable to true" do
-      expect(configuration.nullable).to be true
+    describe "#nullable" do
+      let(:output) { configuration.nullable }
+
+      it "is enabled" do
+        expect(output).to be(true)
+      end
     end
 
-    it "sets :inquirable to true" do
-      expect(configuration.inquirable).to be true
+    describe "#inquirable" do
+      let(:output) { configuration.inquirable }
+
+      it "is enabled" do
+        expect(output).to be(true)
+      end
     end
   end
 
   describe "#reset!" do
-    before do
-      configuration.scopeable = false
-      configuration.validatable = false
-      configuration.nullable = false
-      configuration.inquirable = false
-      configuration.reset!
+    context "with :scopeable disabled" do
+      let(:output) { configuration.scopeable }
+
+      before do
+        configuration.scopeable = false
+        configuration.reset!
+      end
+
+      it "restores the default" do
+        expect(output).to be(true)
+      end
     end
 
-    it "restores :scopeable to default" do
-      expect(configuration.scopeable).to be true
+    context "with :validatable disabled" do
+      let(:output) { configuration.validatable }
+
+      before do
+        configuration.validatable = false
+        configuration.reset!
+      end
+
+      it "restores the default" do
+        expect(output).to be(true)
+      end
     end
 
-    it "restores :validatable to default" do
-      expect(configuration.validatable).to be true
+    context "with :nullable disabled" do
+      let(:output) { configuration.nullable }
+
+      before do
+        configuration.nullable = false
+        configuration.reset!
+      end
+
+      it "restores the default" do
+        expect(output).to be(true)
+      end
     end
 
-    it "restores :nullable to default" do
-      expect(configuration.nullable).to be true
-    end
+    context "with :inquirable disabled" do
+      let(:output) { configuration.inquirable }
 
-    it "restores :inquirable to default" do
-      expect(configuration.inquirable).to be true
+      before do
+        configuration.inquirable = false
+        configuration.reset!
+      end
+
+      it "restores the default" do
+        expect(output).to be(true)
+      end
     end
   end
 end

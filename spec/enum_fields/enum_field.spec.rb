@@ -5,7 +5,7 @@ require "spec_helper"
 RSpec.describe EnumFields::EnumField do
   include_context "with TestModel"
 
-  let(:definitions) do
+  let(:definition) do
     {
       pending: {
         value: "pending",
@@ -20,336 +20,308 @@ RSpec.describe EnumFields::EnumField do
     }
   end
 
-  describe ".define" do
-    it "defines methods on the model class" do
-      described_class.define(
-        model_class: TestModel,
-        accessor: :status,
-        definition: definitions,
-        options: {}
-      )
+  let(:expected_definition) { definition.with_indifferent_access }
+  let(:current_metadata) { definition.values.first.with_indifferent_access }
+  let(:current_value) { current_metadata[:value] }
+  let(:alternate_metadata) { definition.values.last.with_indifferent_access }
+  let(:alternate_value) { alternate_metadata[:value] }
+  let(:definition_arguments) do
+    {
+      model_class: TestModel,
+      accessor: :status,
+      definition: definition,
+      options: {},
+    }
+  end
 
-      expect(TestModel).to respond_to(:statuses)
-    end
+  before do
+    described_class.define(**definition_arguments)
+  end
 
-    it "returns validation result" do
-      result = described_class.define(
-        model_class: TestModel,
-        accessor: :status,
-        definition: definitions,
-        options: {}
-      )
+  describe "Model.<accessor>s" do
+    let(:output) { TestModel.statuses }
 
-      expect(result).to be_present
+    it "returns the definitions" do
+      expect(output).to eq(expected_definition)
     end
   end
 
-  describe "#initialize" do
-    subject(:enum_field) do
-      described_class.new(
-        model_class: TestModel,
-        accessor: :status,
-        definition: definitions,
-        options: options
-      )
-    end
+  describe "Model.<accessor>s_count" do
+    let(:output) { TestModel.statuses_count }
 
-    context "without custom column" do
-      let(:options) { {} }
-
-      it "sets accessor as symbol" do
-        expect(enum_field.instance_variable_get(:@accessor)).to eq(:status)
-      end
-
-      it "sets column_name same as accessor" do
-        expect(enum_field.instance_variable_get(:@column_name)).to eq(:status)
-      end
-
-      it "creates Definition object" do
-        definition = enum_field.instance_variable_get(:@definition)
-        expect(definition).to be_a(EnumFields::Definition)
-      end
-    end
-
-    context "with custom column" do
-      let(:options) { { column: :status_type } }
-
-      it "sets column_name from options" do
-        expect(enum_field.instance_variable_get(:@column_name)).to eq(:status_type)
-      end
-
-      it "keeps accessor as provided" do
-        expect(enum_field.instance_variable_get(:@accessor)).to eq(:status)
-      end
+    it "returns the number of definitions" do
+      expect(output).to eq(definition.size)
     end
   end
 
-  describe "#define!" do
-    before do
-      described_class.new(
-        model_class: TestModel,
-        accessor: :status,
-        definition: definitions,
-        options: {}
-      ).define!
+  describe "Model.<accessor>_values" do
+    let(:output) { TestModel.status_values }
+
+    it "returns the definition values" do
+      expect(output).to match_array(definition.values.pluck(:value))
+    end
+  end
+
+  describe "Model.<accessor>_options" do
+    let(:output) { TestModel.status_options }
+    let(:expected_options) { definition.values.map { |metadata| [metadata[:label], metadata[:value]] } }
+
+    it "returns label and value pairs" do
+      expect(output).to eq(expected_options)
     end
 
-    describe "storing definition" do
-      it "stores definition data in enum_fields" do
-        expect(TestModel.enum_fields[:status]).to be_present
+    context "when :definition keys differ from their values" do
+      let(:definition) do
+        {
+          pending_review: {
+            value: "in review",
+            label: "Pending Review",
+          },
+          active: {
+            value: "is active",
+            label: "Active",
+          },
+        }
       end
 
-      it "stores the definition hash" do
-        pending_def = TestModel.enum_fields[:status][:pending]
-        expect(pending_def[:value]).to eq("pending")
-        expect(pending_def[:label]).to eq("Pending")
-        expect(pending_def[:icon]).to eq("clock")
-      end
-    end
-
-    describe "class methods" do
-      it "defines collection method" do
-        expect(TestModel).to respond_to(:statuses)
-      end
-
-      it "defines count method" do
-        expect(TestModel).to respond_to(:statuses_count)
-      end
-
-      it "defines values method" do
-        expect(TestModel).to respond_to(:status_values)
-      end
-
-      it "defines options method" do
-        expect(TestModel).to respond_to(:status_options)
-      end
-
-      it "returns correct values" do
-        expect(TestModel.status_values).to contain_exactly("pending", "active")
-      end
-
-      it "returns correct count" do
-        expect(TestModel.statuses_count).to eq(2)
-      end
-
-      it "returns correct options" do
-        expect(TestModel.status_options).to match([
-          %w[
-            Pending
-            pending
-          ],
-          %w[
-            Active
-            active
-          ],
-        ])
-      end
-    end
-
-    describe "instance methods" do
-      let(:record) { TestModel.new(status: "pending") }
-
-      it "defines metadata method" do
-        expect(record).to respond_to(:status_metadata)
-      end
-
-      it "defines property methods" do
-        expect(record).to respond_to(:status_value)
-        expect(record).to respond_to(:status_label)
-        expect(record).to respond_to(:status_icon)
-      end
-
-      it "defines inquiry methods" do
-        expect(record).to respond_to(:pending_status?)
-        expect(record).to respond_to(:active_status?)
-      end
-
-      it "returns correct metadata" do
-        metadata = record.status_metadata
-        expect(metadata[:value]).to eq("pending")
-        expect(metadata[:label]).to eq("Pending")
-        expect(metadata[:icon]).to eq("clock")
-      end
-
-      it "returns correct property values" do
-        expect(record.status_label).to eq("Pending")
-        expect(record.status_icon).to eq("clock")
-      end
-
-      it "inquiry methods return correct boolean" do
-        expect(record.pending_status?).to be(true)
-        expect(record.active_status?).to be(false)
-      end
-    end
-
-    describe "scopes" do
-      it "defines scopes for each value" do
-        expect(TestModel).to respond_to(:pending_status)
-        expect(TestModel).to respond_to(:active_status)
-      end
-    end
-
-    describe "validation" do
-      let(:record) { TestModel.new(status: "invalid") }
-
-      it "validates inclusion" do
-        expect(record.valid?).to be(false)
-      end
-
-      it "allows valid values" do
-        record.status = "pending"
-        expect(record.valid?).to be(true)
-      end
-
-      it "allows nil" do
-        record.status = nil
-        expect(record.valid?).to be(true)
+      it "returns the stored values" do
+        expect(output).to eq(expected_options)
       end
     end
   end
 
-  describe "custom column option" do
-    before do
-      described_class.new(
+  describe "Model.<key>_<accessor>_value" do
+    let(:output) do
+      definition.keys.to_h { |key| [key, TestModel.public_send("#{key}_status_value")] }
+    end
+    let(:expected_output) { definition.transform_values { |metadata| metadata[:value] } }
+
+    it "returns the value for each definition" do
+      expect(output).to eq(expected_output)
+    end
+  end
+
+  describe "Instance.<accessor>_metadata" do
+    let(:record) { TestModel.new(status: current_value) }
+    let(:output) { record.status_metadata }
+
+    it "returns the metadata for the current accessor value" do
+      expect(output).to eq(current_metadata)
+    end
+
+    context "when the accessor value is nil" do
+      let(:record) { TestModel.new(status: nil) }
+
+      it "returns nil" do
+        expect(output).to be_nil
+      end
+    end
+  end
+
+  describe "Instance.<accessor>_value" do
+    let(:record) { TestModel.new(status: current_value) }
+    let(:output) { record.status_value }
+
+    it "returns the current accessor value" do
+      expect(output).to eq(current_metadata[:value])
+    end
+  end
+
+  describe "Instance.<accessor>_label" do
+    let(:record) { TestModel.new(status: current_value) }
+    let(:output) { record.status_label }
+
+    it "returns the label for the current accessor value" do
+      expect(output).to eq(current_metadata[:label])
+    end
+  end
+
+  describe "Instance.<accessor>_icon" do
+    let(:record) { TestModel.new(status: current_value) }
+    let(:output) { record.status_icon }
+
+    it "returns the icon for the current accessor value" do
+      expect(output).to eq(current_metadata[:icon])
+    end
+  end
+
+  describe "Instance.<key>_<accessor>?" do
+    let(:record) { TestModel.new(status: current_value) }
+    let(:output) do
+      definition.keys.to_h { |key| [key, record.public_send("#{key}_status?")] }
+    end
+    let(:expected_output) do
+      definition.transform_values { |metadata| record.status == metadata[:value] }
+    end
+
+    it "returns whether the accessor matches each definition" do
+      expect(output).to eq(expected_output)
+    end
+  end
+
+  describe "Model.<key>_<accessor>" do
+    let(:scope_queries) do
+      definition.map do |key, metadata|
+        [TestModel.public_send("#{key}_status").to_sql, metadata[:value]]
+      end
+    end
+
+    it "filters by the value for each definition" do
+      expect(scope_queries).to all(satisfy { |sql, value| sql.include?("\"status\" = '#{value}'") })
+    end
+  end
+
+  describe "Validating Instance.<accessor>" do
+    let(:record) { TestModel.new(status: accessor_value) }
+
+    context "when the accessor is not a definition value" do
+      let(:accessor_value) { "invalid" }
+
+      before { record.valid? }
+
+      it "is invalid" do
+        expect(record).to be_invalid
+      end
+
+      it "adds an error on the accessor" do
+        expect(record.errors[:status]).to include("is not included in the list")
+      end
+    end
+
+    context "when the accessor is a definition value" do
+      let(:accessor_value) { current_value }
+
+      before { record.valid? }
+
+      it "is valid" do
+        expect(record).to be_valid
+      end
+
+      it "does not add an error on the accessor" do
+        expect(record.errors[:status]).to be_empty
+      end
+    end
+
+    context "when the accessor is nil" do
+      let(:accessor_value) { nil }
+
+      before { record.valid? }
+
+      it "is valid" do
+        expect(record).to be_valid
+      end
+
+      it "does not add an error on the accessor" do
+        expect(record.errors[:status]).to be_empty
+      end
+    end
+  end
+
+  describe "Handling :column option" do
+    let(:column_definition_arguments) do
+      {
         model_class: TestModel,
         accessor: :workflow,
-        definition: definitions,
-        options: { column: :status }
-      ).define!
+        definition: definition,
+        options: { column: :status },
+      }
     end
+    let(:record) { TestModel.new(status: current_value) }
 
-    describe "getter and setter" do
-      let(:record) { TestModel.new(status: "pending") }
-
-      it "defines custom getter" do
-        expect(record).to respond_to(:workflow)
-      end
-
-      it "defines custom setter" do
-        expect(record).to respond_to(:workflow=)
-      end
-
-      it "getter returns column value" do
-        expect(record.workflow).to eq("pending")
-      end
-
-      it "setter updates column value" do
-        record.workflow = "active"
-        expect(record.status).to eq("active")
-      end
-    end
-
-    describe "metadata methods" do
-      let(:record) { TestModel.new(status: "pending") }
-
-      it "uses custom column for metadata" do
-        metadata = record.workflow_metadata
-        expect(metadata[:value]).to eq("pending")
-        expect(metadata[:label]).to eq("Pending")
-        expect(metadata[:icon]).to eq("clock")
-      end
-
-      it "uses custom column for properties" do
-        expect(record.workflow_label).to eq("Pending")
-      end
-    end
-
-    describe "inquiry methods" do
-      let(:record) { TestModel.new(status: "active") }
-
-      it "uses custom column for inquiry" do
-        expect(record.pending_workflow?).to be(false)
-        expect(record.active_workflow?).to be(true)
-      end
-    end
-
-    describe "scopes" do
-      it "uses custom column in scopes" do
-        expect(TestModel).to respond_to(:pending_workflow)
-        expect(TestModel).to respond_to(:active_workflow)
-      end
-    end
-  end
-
-  describe "closure variable capture" do
     before do
-      described_class.new(
-        model_class: TestModel,
-        accessor: :priority,
-        definition: { low: { value: "low" }, high: { value: "high" } },
-        options: { column: :priority_level }
-      ).define!
+      described_class.define(**column_definition_arguments)
     end
 
-    let(:record) { TestModel.new(priority_level: "low") }
+    describe "Instance.<accessor>" do
+      let(:output) { record.workflow }
 
-    it "captures column_name correctly in getter" do
-      expect(record.priority).to eq("low")
+      it "returns the configured column value" do
+        expect(output).to eq(current_value)
+      end
     end
 
-    it "captures column_name correctly in setter" do
-      record.priority = "high"
-      expect(record.priority_level).to eq("high")
+    describe "Instance.<accessor>=" do
+      before do
+        record.workflow = alternate_value
+      end
+
+      it "sets the configured column" do
+        expect(record.status).to eq(alternate_value)
+      end
     end
 
-    it "captures column_name correctly in metadata method" do
-      expect(record.priority_metadata[:value]).to eq("low")
+    describe "Instance.<accessor>_metadata" do
+      let(:output) { record.workflow_metadata }
+
+      it "returns metadata for the configured column value" do
+        expect(output).to eq(current_metadata)
+      end
     end
 
-    it "captures column_name correctly in inquiry methods" do
-      expect(record.low_priority?).to be(true)
-      expect(record.high_priority?).to be(false)
+    describe "Instance.<accessor>_<property>" do
+      let(:output) { record.workflow_label }
+
+      it "returns the property for the configured column value" do
+        expect(output).to eq(current_metadata[:label])
+      end
+    end
+
+    describe "Instance.<key>_<accessor>?" do
+      let(:output) do
+        definition.keys.to_h { |key| [key, record.public_send("#{key}_workflow?")] }
+      end
+      let(:expected_output) do
+        definition.transform_values { |metadata| record.status == metadata[:value] }
+      end
+
+      it "returns whether the configured column matches each definition" do
+        expect(output).to eq(expected_output)
+      end
+    end
+
+    describe "Model.<key>_<accessor>" do
+      let(:scope_queries) do
+        definition.map do |key, metadata|
+          [TestModel.public_send("#{key}_workflow").to_sql, metadata[:value]]
+        end
+      end
+
+      it "filters the configured column by each definition value" do
+        expect(scope_queries).to all(satisfy { |sql, value| sql.include?("\"status\" = '#{value}'") })
+      end
     end
   end
 
-  describe "with a key that differs from its value" do
-    let(:mismatched_definitions) do
+  describe "Handling an Array definition" do
+    let(:definition) { %w[user admin] }
+    let(:array_definition_arguments) do
       {
-        pending_review: {
-          value: "in review",
-          label: "Pending Review",
-        },
-        active: {
-          value: "is active",
-          label: "Active",
-        },
+        model_class: TestModel,
+        accessor: :role,
+        definition: definition,
+        options: {},
       }
     end
 
     before do
-      described_class.new(
-        model_class: TestModel,
-        accessor: :status,
-        definition: mismatched_definitions,
-        options: {}
-      ).define!
+      described_class.define(**array_definition_arguments)
     end
 
-    it "returns the stored value, not the key, in options" do
-      expect(TestModel.status_options).to match([
-        ["Pending Review", "in review"],
-        ["Active", "is active"],
-      ])
-    end
-  end
+    describe "Model.<accessor>_values" do
+      let(:output) { TestModel.role_values }
 
-  describe "with array definition" do
-    before do
-      described_class.new(
-        model_class: TestModel,
-        accessor: :role,
-        definition: %w[user admin],
-        options: {}
-      ).define!
+      it "returns values from the definition" do
+        expect(output).to match_array(definition)
+      end
     end
 
-    it "creates proper definitions from array" do
-      expect(TestModel.role_values).to contain_exactly("user", "admin")
-    end
+    describe "Instance.<key>_<accessor>?" do
+      let(:record) { TestModel.new(role: definition.last) }
+      let(:output) { record.public_send("#{definition.last}_role?") }
 
-    it "creates inquiry methods" do
-      record = TestModel.new(role: "admin")
-      expect(record.admin_role?).to be(true)
+      it "returns true for the matching definition" do
+        expect(output).to be true
+      end
     end
   end
 end

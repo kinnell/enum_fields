@@ -13,8 +13,16 @@ RSpec.describe EnumFields::Base, "Polymorphic Columns" do
 
   let(:definitions) do
     {
-      TypeA: { value: "TypeA", label: "Type A" },
-      TypeB: { value: "TypeB", label: "Type B" },
+      TypeA: {
+        value: "TypeA",
+        label: "Type A",
+        priority: 1,
+      },
+      TypeB: {
+        value: "TypeB",
+        label: "Type B",
+        priority: 2,
+      },
     }
   end
 
@@ -54,328 +62,580 @@ RSpec.describe EnumFields::Base, "Polymorphic Columns" do
     end
   end
 
+  let(:association_options) { { polymorphic: true } }
+  let(:record_type_options) { {} }
+  let(:current_metadata) { definitions.values.first }
+  let(:current_value) { current_metadata[:value] }
+
   before do
     stub_const("PolymorphicTestModel", test_model_class)
     stub_const("TypeA", type_a_class)
     stub_const("TypeB", type_b_class)
     stub_const("InvalidType", invalid_type_class)
+    PolymorphicTestModel.belongs_to(:record, association_options)
+    PolymorphicTestModel.enum_field(:record_type, definitions, record_type_options)
   end
 
-  describe "polymorphic validation" do
-    let(:record) { PolymorphicTestModel.new(record_type: "TypeA") }
+  describe "Model.<accessor>s" do
+    let(:output) { PolymorphicTestModel.record_types }
 
-    before do
-      PolymorphicTestModel.belongs_to(:record, polymorphic: true)
-      PolymorphicTestModel.enum_field(:record_type, definitions)
-    end
-
-    it "uses custom validation instead of standard inclusion" do
-      expect(PolymorphicTestModel.validations[:record_type]).to be_nil
-      expect(PolymorphicTestModel.custom_validations).not_to be_empty
-    end
-
-    it "defines the enum accessors" do
-      expect(PolymorphicTestModel).to respond_to(:record_types)
-      expect(PolymorphicTestModel).to respond_to(:record_type_values)
-    end
-
-    it "defines inquiry methods" do
-      expect(record).to respond_to(:TypeA_record_type?)
-      expect(record).to respond_to(:TypeB_record_type?)
-    end
-
-    it "defines property methods" do
-      expect(record).to respond_to(:record_type_label)
-      expect(record).to respond_to(:record_type_value)
-    end
-
-    it "has correct property values" do
-      expect(record.record_type_label).to eq("Type A")
-      expect(record.record_type_value).to eq("TypeA")
-    end
-
-    it "defines metadata method" do
-      expect(record).to respond_to(:record_type_metadata)
-      expect(record.record_type_metadata).to include("value" => "TypeA", "label" => "Type A")
-    end
-
-    it "defines scopes" do
-      expect(PolymorphicTestModel).to respond_to(:TypeA_record_type)
-      expect(PolymorphicTestModel).to respond_to(:TypeB_record_type)
-    end
-
-    describe "with association object (Model.new(record: obj))" do
-      context "when association type is valid" do
-        let(:record) { PolymorphicTestModel.new.tap { |r| r.record = TypeA.new } }
-
-        it "is valid" do
-          expect(record).to be_valid
-        end
-
-        it "sets record_type from association class name" do
-          expect(record.record_type).to eq("TypeA")
-        end
-
-        it "has correct property values" do
-          expect(record.record_type_label).to eq("Type A")
-          expect(record.record_type_value).to eq("TypeA")
-        end
-
-        it "has correct metadata" do
-          expect(record.record_type_metadata).to include("value" => "TypeA", "label" => "Type A")
-        end
-
-        it "inquiry methods work after assigning association" do
-          expect(record.TypeA_record_type?).to be true
-          expect(record.TypeB_record_type?).to be false
-        end
-      end
-
-      context "when association type is invalid" do
-        let(:record) { PolymorphicTestModel.new.tap { |r| r.record = InvalidType.new } }
-
-        it "is not valid" do
-          expect(record).not_to be_valid
-        end
-
-        it "adds error to association name" do
-          record.valid?
-          expect(record.errors[:record]).to include(a_string_matching(%r{must be one of}))
-        end
-      end
-    end
-
-    describe "with direct column assignment (Model.new(record_type: x, record_id: z))" do
-      context "when record_type is valid" do
-        let(:record) { PolymorphicTestModel.new(record_type: "TypeA", record_id: 1) }
-
-        it "is valid" do
-          expect(record).to be_valid
-        end
-      end
-
-      context "when record_type is invalid" do
-        let(:record) { PolymorphicTestModel.new(record_type: "InvalidType", record_id: 99) }
-
-        it "is not valid" do
-          expect(record).not_to be_valid
-        end
-
-        it "adds error to column name" do
-          record.valid?
-          expect(record.errors[:record_type]).to include(a_string_matching(%r{must be one of}))
-        end
-      end
-
-      context "when record_type is nil" do
-        let(:record) { PolymorphicTestModel.new(record_type: nil) }
-
-        it "is invalid (association is required by default)" do
-          expect(record).to be_invalid
-        end
-      end
+    it "returns definitions keyed independently from their stored values" do
+      expect(output).to match(definitions)
     end
   end
 
-  describe "optional polymorphic association" do
-    before do
-      PolymorphicTestModel.belongs_to(:record, polymorphic: true, optional: true)
-      PolymorphicTestModel.enum_field(:record_type, definitions)
-    end
+  describe "Model.<accessor>s_count" do
+    let(:output) { PolymorphicTestModel.record_types_count }
 
-    it "allows nil when record_type is nil" do
-      record = PolymorphicTestModel.new(record_type: nil)
-      expect(record).to be_valid
-    end
-
-    it "validates present values" do
-      record = PolymorphicTestModel.new(record_type: "TypeA")
-      expect(record).to be_valid
-    end
-
-    it "rejects invalid present values" do
-      record = PolymorphicTestModel.new(record_type: "InvalidType")
-      expect(record).to be_invalid
+    it "returns the number of polymorphic definitions" do
+      expect(output).to eq(definitions.size)
     end
   end
 
-  describe "nullable override on polymorphic" do
-    context "when association is required but nullable: true" do
+  describe "Model.<accessor>_values" do
+    let(:output) { PolymorphicTestModel.record_type_values }
+
+    it "returns the stored polymorphic type values" do
+      expect(output).to match_array(definitions.values.pluck(:value))
+    end
+  end
+
+  describe "Model.<accessor>_options" do
+    let(:output) { PolymorphicTestModel.record_type_options }
+    let(:expected_options) { definitions.values.map { |metadata| [metadata[:label], metadata[:value]] } }
+
+    it "returns labels paired with stored polymorphic type values" do
+      expect(output).to eq(expected_options)
+    end
+  end
+
+  describe "Model.<key>_<accessor>_value" do
+    let(:output) do
+      definitions.keys.to_h { |key| [key, PolymorphicTestModel.public_send("#{key}_record_type_value")] }
+    end
+    let(:expected_output) { definitions.transform_values { |metadata| metadata[:value] } }
+
+    it "returns the stored value for each definition" do
+      expect(output).to eq(expected_output)
+    end
+  end
+
+  describe "Instance.<accessor>_metadata" do
+    let(:record) { PolymorphicTestModel.new(record_type: current_value) }
+    let(:output) { record.record_type_metadata }
+
+    it "returns metadata by the stored polymorphic type value" do
+      expect(output).to match(current_metadata)
+    end
+  end
+
+  describe "Instance.<accessor>_value" do
+    let(:record) { PolymorphicTestModel.new(record_type: current_value) }
+    let(:output) { record.record_type_value }
+
+    it "returns the stored polymorphic type value" do
+      expect(output).to eq(current_value)
+    end
+  end
+
+  describe "Instance.<accessor>_label" do
+    let(:record) { PolymorphicTestModel.new(record_type: current_value) }
+    let(:output) { record.record_type_label }
+
+    it "returns the label for the stored polymorphic type value" do
+      expect(output).to eq(current_metadata[:label])
+    end
+  end
+
+  describe "Instance.<accessor>_<property>" do
+    let(:record) { PolymorphicTestModel.new(record_type: current_value) }
+    let(:output) { record.record_type_priority }
+
+    it "returns an additional property by the stored polymorphic type value" do
+      expect(output).to eq(current_metadata[:priority])
+    end
+  end
+
+  describe "Instance.<key>_<accessor>?" do
+    let(:record) { PolymorphicTestModel.new(record_type: current_value) }
+    let(:output) do
+      definitions.keys.to_h { |key| [key, record.public_send("#{key}_record_type?")] }
+    end
+    let(:expected_output) do
+      definitions.transform_values { |metadata| record.record_type == metadata[:value] }
+    end
+
+    it "returns whether the stored value matches each definition" do
+      expect(output).to eq(expected_output)
+    end
+  end
+
+  describe "Model.<key>_<accessor>" do
+    let(:scope_queries) do
+      definitions.map do |key, metadata|
+        [PolymorphicTestModel.public_send("#{key}_record_type").to_sql, metadata[:value]]
+      end
+    end
+
+    it "queries the accessor with the stored value for each definition" do
+      expect(scope_queries).to all(satisfy { |sql, value| sql.include?("\"record_type\" = '#{value}'") })
+    end
+  end
+
+  describe "Validating polymorphic Instance.<accessor>" do
+    context "when the assigned association type is in the list of definitions" do
+      let(:record) { PolymorphicTestModel.new }
+      let(:association) { TypeA.new }
+
       before do
-        PolymorphicTestModel.belongs_to(:record, polymorphic: true)
-        PolymorphicTestModel.enum_field(:record_type, definitions, nullable: true)
+        record.record = association
+        record.valid?
       end
 
-      it "allows nil despite required association" do
-        record = PolymorphicTestModel.new(record_type: nil)
-        expect(record).to be_valid
-      end
-    end
-
-    context "when association is optional but nullable: false" do
-      before do
-        PolymorphicTestModel.belongs_to(:record, polymorphic: true, optional: true)
-        PolymorphicTestModel.enum_field(:record_type, definitions, nullable: false)
+      it "sets the accessor from the association class name" do
+        expect(record.record_type).to eq("TypeA")
       end
 
-      it "rejects nil despite optional association" do
-        record = PolymorphicTestModel.new(record_type: nil)
-        expect(record).to be_invalid
+      it "returns the value from the assigned association type" do
+        expect(record.record_type_value).to eq("TypeA")
       end
-    end
-  end
 
-  describe "non-polymorphic columns" do
-    let(:non_polymorphic_definitions) do
-      {
-        active: { value: "active", label: "Active" },
-        inactive: { value: "inactive", label: "Inactive" },
-      }
-    end
+      it "returns the label from the assigned association type" do
+        expect(record.record_type_label).to eq("Type A")
+      end
 
-    before do
-      PolymorphicTestModel.enum_field(:status, non_polymorphic_definitions)
-    end
+      it "returns metadata from the assigned association type" do
+        expect(record.record_type_metadata).to match(definitions[:TypeA])
+      end
 
-    it "uses standard inclusion validation" do
-      expect(PolymorphicTestModel.validations[:status]).to be_present
-    end
+      it "returns true for the assigned association type" do
+        expect(record.TypeA_record_type?).to be true
+      end
 
-    context "when value is valid" do
-      let(:record) { PolymorphicTestModel.new(status: "active") }
+      it "returns false for a different association type" do
+        expect(record.TypeB_record_type?).to be false
+      end
 
       it "is valid" do
         expect(record).to be_valid
       end
+
+      it "does not add an error on :record" do
+        expect(record.errors[:record]).to be_empty
+      end
     end
 
-    context "when value is invalid" do
-      let(:record) { PolymorphicTestModel.new(status: "invalid") }
+    context "when the assigned association type is not in the list of definitions" do
+      let(:record) { PolymorphicTestModel.new }
+      let(:association) { InvalidType.new }
+
+      before do
+        record.record = association
+        record.valid?
+      end
 
       it "is not valid" do
-        expect(record).not_to be_valid
+        expect(record).to be_invalid
+      end
+
+      it "adds an error on :record" do
+        expect(record.errors[:record]).to include("must be one of: TypeA, TypeB")
+      end
+    end
+
+    context "when Instance.<accessor> is in the list of definitions" do
+      let(:record) { PolymorphicTestModel.new(record_type: "TypeA", record_id: 1) }
+
+      before { record.valid? }
+
+      it "is valid" do
+        expect(record).to be_valid
+      end
+
+      it "does not add an error on the accessor" do
+        expect(record.errors[:record_type]).to be_empty
+      end
+    end
+
+    context "when Instance.<accessor> is not in the list of definitions" do
+      let(:record) { PolymorphicTestModel.new(record_type: "InvalidType", record_id: 99) }
+
+      before { record.valid? }
+
+      it "is not valid" do
+        expect(record).to be_invalid
+      end
+
+      it "adds an error on the accessor" do
+        expect(record.errors[:record_type]).to include("must be one of: TypeA, TypeB")
+      end
+    end
+
+    context "when Instance.<accessor> is nil for a required association" do
+      let(:record) { PolymorphicTestModel.new(record_type: nil) }
+
+      before { record.valid? }
+
+      it "is not valid" do
+        expect(record).to be_invalid
+      end
+
+      it "adds an error on the accessor" do
+        expect(record.errors[:record_type]).to include("must be one of: TypeA, TypeB")
       end
     end
   end
 
-  describe "validatable: false option" do
-    before do
-      PolymorphicTestModel.belongs_to(:record, polymorphic: true)
-      PolymorphicTestModel.enum_field(:record_type, definitions, validatable: false)
+  describe "Handling :nullable option for a polymorphic column" do
+    let(:record) { PolymorphicTestModel.new(record_type: nil) }
+
+    context "when the association is optional and :nullable is not specified" do
+      let(:association_options) { { polymorphic: true, optional: true } }
+
+      before { record.valid? }
+
+      it "is valid" do
+        expect(record).to be_valid
+      end
+
+      it "does not add an error on the accessor" do
+        expect(record.errors[:record_type]).to be_empty
+      end
     end
 
-    it "skips all validation" do
-      expect(PolymorphicTestModel.validations[:record_type]).to be_nil
-      expect(PolymorphicTestModel.custom_validations).to be_empty
+    context "when the association is optional and Instance.<accessor> is valid" do
+      let(:association_options) { { polymorphic: true, optional: true } }
+      let(:record) { PolymorphicTestModel.new(record_type: "TypeA") }
+
+      before { record.valid? }
+
+      it "is valid" do
+        expect(record).to be_valid
+      end
+
+      it "does not add an error on the accessor" do
+        expect(record.errors[:record_type]).to be_empty
+      end
     end
 
-    it "allows any value" do
-      record = PolymorphicTestModel.new(record_type: "AnythingGoes")
-      expect(record).to be_valid
+    context "when the association is optional and Instance.<accessor> is invalid" do
+      let(:association_options) { { polymorphic: true, optional: true } }
+      let(:record) { PolymorphicTestModel.new(record_type: "InvalidType") }
+
+      before { record.valid? }
+
+      it "is not valid" do
+        expect(record).to be_invalid
+      end
+
+      it "adds an error on the accessor" do
+        expect(record.errors[:record_type]).to include("must be one of: TypeA, TypeB")
+      end
+    end
+
+    context "when the association is required and :nullable is true" do
+      let(:record_type_options) { { nullable: true } }
+
+      before { record.valid? }
+
+      it "is valid" do
+        expect(record).to be_valid
+      end
+
+      it "does not add an error on the accessor" do
+        expect(record.errors[:record_type]).to be_empty
+      end
+    end
+
+    context "when the association is optional and :nullable is false" do
+      let(:association_options) { { polymorphic: true, optional: true } }
+      let(:record_type_options) { { nullable: false } }
+
+      before { record.valid? }
+
+      it "is not valid" do
+        expect(record).to be_invalid
+      end
+
+      it "adds an error on the accessor" do
+        expect(record.errors[:record_type]).to include("must be one of: TypeA, TypeB")
+      end
     end
   end
 
-  describe "with snake_case definition keys (mismatched from column values)" do
-    let(:snake_case_definitions) do
+  describe "Handling :validatable option for a polymorphic column" do
+    context "when :validatable is false" do
+      let(:record_type_options) { { validatable: false } }
+      let(:record) { PolymorphicTestModel.new(record_type: "AnythingGoes") }
+
+      before { record.valid? }
+
+      it "is valid" do
+        expect(record).to be_valid
+      end
+
+      it "does not add an error on the accessor" do
+        expect(record.errors[:record_type]).to be_empty
+      end
+    end
+  end
+
+  describe "Validating a non-polymorphic Instance.<accessor>" do
+    let(:status_definitions) do
       {
-        type_a: { value: "TypeA", label: "Type A", priority: 1 },
-        type_b: { value: "TypeB", label: "Type B", priority: 2 },
+        active: {
+          value: "active",
+          label: "Active",
+        },
+        inactive: {
+          value: "inactive",
+          label: "Inactive",
+        },
       }
     end
+    let(:record) do
+      PolymorphicTestModel.new({
+        status: accessor_value,
+        record_type: definitions.values.first[:value],
+      })
+    end
 
     before do
-      PolymorphicTestModel.belongs_to(:record, polymorphic: true)
-      PolymorphicTestModel.enum_field(:record_type, snake_case_definitions)
+      PolymorphicTestModel.enum_field(:status, status_definitions)
     end
 
-    it "class methods work" do
-      expect(PolymorphicTestModel.record_types.keys).to contain_exactly("type_a", "type_b")
-      expect(PolymorphicTestModel.record_type_values).to contain_exactly("TypeA", "TypeB")
+    context "when Instance.<accessor> is valid" do
+      let(:accessor_value) { status_definitions.values.first[:value] }
+
+      before { record.valid? }
+
+      it "is valid" do
+        expect(record).to be_valid
+      end
+
+      it "does not add an error on the accessor" do
+        expect(record.errors[:status]).to be_empty
+      end
     end
 
-    it "options use the stored value rather than the definition key" do
-      expect(PolymorphicTestModel.record_type_options).to contain_exactly(
-        ["Type A", "TypeA"],
-        ["Type B", "TypeB"]
-      )
-    end
+    context "when Instance.<accessor> is invalid" do
+      let(:accessor_value) { "invalid" }
 
-    it "property methods work via value lookup when key does not match column value" do
-      record = PolymorphicTestModel.new(record_type: "TypeA")
-      expect(record.record_type_label).to eq("Type A")
-      expect(record.record_type_value).to eq("TypeA")
-      expect(record.record_type_priority).to eq(1)
-    end
+      before { record.valid? }
 
-    it "metadata method works via value lookup" do
-      record = PolymorphicTestModel.new(record_type: "TypeA")
-      expect(record.record_type_metadata).to include("value" => "TypeA", "label" => "Type A", "priority" => 1)
-    end
+      it "is not valid" do
+        expect(record).to be_invalid
+      end
 
-    it "inquiry methods still work (they use value comparison)" do
-      record = PolymorphicTestModel.new(record_type: "TypeA")
-      expect(record.type_a_record_type?).to be true
-      expect(record.type_b_record_type?).to be false
+      it "adds an error on the accessor" do
+        expect(record.errors[:status]).not_to be_empty
+      end
     end
   end
 
-  describe "with column override on polymorphic" do
+  describe "Handling definition keys that differ from stored values" do
+    let(:definitions) do
+      {
+        type_a: {
+          value: "TypeA",
+          label: "Type A",
+          priority: 1,
+        },
+        type_b: {
+          value: "TypeB",
+          label: "Type B",
+          priority: 2,
+        },
+      }
+    end
+    let(:current_metadata) { definitions.values.first }
+    let(:record) { PolymorphicTestModel.new(record_type: current_metadata[:value]) }
+
+    describe "Model.<accessor>s" do
+      let(:output) { PolymorphicTestModel.record_types }
+
+      it "returns definitions keyed independently from their stored values" do
+        expect(output).to match(definitions)
+      end
+    end
+
+    describe "Model.<accessor>_values" do
+      let(:output) { PolymorphicTestModel.record_type_values }
+
+      it "returns the stored values" do
+        expect(output).to match_array(definitions.values.pluck(:value))
+      end
+    end
+
+    describe "Model.<accessor>_options" do
+      let(:output) { PolymorphicTestModel.record_type_options }
+      let(:expected_options) { definitions.values.map { |metadata| [metadata[:label], metadata[:value]] } }
+
+      it "returns labels paired with stored values" do
+        expect(output).to match_array(expected_options)
+      end
+    end
+
+    describe "Instance.<accessor>_metadata" do
+      let(:output) { record.record_type_metadata }
+
+      it "returns metadata by the stored value" do
+        expect(output).to match(current_metadata)
+      end
+    end
+
+    describe "Instance.<accessor>_value" do
+      let(:output) { record.record_type_value }
+
+      it "returns the stored value" do
+        expect(output).to eq(current_metadata[:value])
+      end
+    end
+
+    describe "Instance.<accessor>_<property>" do
+      let(:properties) { current_metadata.except(:value) }
+      let(:output) do
+        properties.keys.to_h { |property| [property, record.public_send("record_type_#{property}")] }
+      end
+
+      it "returns each additional property by the stored value" do
+        expect(output).to eq(properties)
+      end
+    end
+
+    describe "Instance.<key>_<accessor>?" do
+      let(:output) do
+        definitions.keys.to_h { |key| [key, record.public_send("#{key}_record_type?")] }
+      end
+      let(:expected_output) do
+        definitions.transform_values { |metadata| record.record_type == metadata[:value] }
+      end
+
+      it "returns whether the stored value matches each key" do
+        expect(output).to eq(expected_output)
+      end
+    end
+  end
+
+  describe "Handling :column option for a polymorphic column" do
+    let(:record) { PolymorphicTestModel.new(taggable_type: "TypeA", record_type: current_value) }
+
     before do
       PolymorphicTestModel.belongs_to(:taggable, polymorphic: true)
       PolymorphicTestModel.enum_field(:tag_kind, definitions, column: :taggable_type)
     end
 
-    it "detects polymorphic based on actual column name" do
-      expect(PolymorphicTestModel.validations[:taggable_type]).to be_nil
-      expect(PolymorphicTestModel.custom_validations).not_to be_empty
+    describe "Model.<accessor>s" do
+      let(:output) { PolymorphicTestModel.tag_kinds }
+
+      it "returns the definitions for the accessor" do
+        expect(output).to match(definitions)
+      end
     end
 
-    it "defines class methods using accessor name" do
-      expect(PolymorphicTestModel).to respond_to(:tag_kinds)
-      expect(PolymorphicTestModel).to respond_to(:tag_kind_values)
-      expect(PolymorphicTestModel).to respond_to(:tag_kind_options)
+    describe "Model.<accessor>_values" do
+      let(:output) { PolymorphicTestModel.tag_kind_values }
+
+      it "returns the stored values for the accessor" do
+        expect(output).to eq(%w[TypeA TypeB])
+      end
     end
 
-    it "defines property methods using accessor name" do
-      record = PolymorphicTestModel.new(taggable_type: "TypeA")
-      expect(record).to respond_to(:tag_kind_label)
-      expect(record).to respond_to(:tag_kind_value)
+    describe "Model.<accessor>_options" do
+      let(:output) { PolymorphicTestModel.tag_kind_options }
+
+      it "returns labels paired with stored values" do
+        expect(output).to eq([
+          ["Type A", "TypeA"],
+          ["Type B", "TypeB"],
+        ])
+      end
     end
 
-    it "property methods read from the correct column" do
-      record = PolymorphicTestModel.new(taggable_type: "TypeA")
-      expect(record.tag_kind_label).to eq("Type A")
-      expect(record.tag_kind_value).to eq("TypeA")
+    describe "Instance.<accessor>" do
+      let(:output) { record.tag_kind }
+
+      it "reads from the configured polymorphic type column" do
+        expect(output).to eq("TypeA")
+      end
     end
 
-    it "defines metadata method using accessor name" do
-      record = PolymorphicTestModel.new(taggable_type: "TypeA")
-      expect(record).to respond_to(:tag_kind_metadata)
-      expect(record.tag_kind_metadata).to include("value" => "TypeA", "label" => "Type A")
+    describe "Instance.<accessor>=" do
+      let(:new_type) { "TypeB" }
+
+      before { record.tag_kind = new_type }
+
+      it "writes to the configured polymorphic type column" do
+        expect(record.taggable_type).to eq(new_type)
+      end
     end
 
-    it "defines inquiry methods using accessor name" do
-      record = PolymorphicTestModel.new(taggable_type: "TypeA")
-      expect(record).to respond_to(:TypeA_tag_kind?)
-      expect(record.TypeA_tag_kind?).to be true
+    describe "Instance.<accessor>_metadata" do
+      let(:output) { record.tag_kind_metadata }
+
+      it "returns metadata from the configured polymorphic type column" do
+        expect(output).to match(definitions[:TypeA])
+      end
     end
 
-    it "defines scopes using accessor name" do
-      expect(PolymorphicTestModel).to respond_to(:TypeA_tag_kind)
-      expect(PolymorphicTestModel).to respond_to(:TypeB_tag_kind)
+    describe "Instance.<accessor>_<property>" do
+      it "returns the label from the configured polymorphic type column" do
+        expect(record.tag_kind_label).to eq("Type A")
+      end
+
+      it "returns the value from the configured polymorphic type column" do
+        expect(record.tag_kind_value).to eq("TypeA")
+      end
     end
 
-    it "defines instance getter for accessor" do
-      record = PolymorphicTestModel.new(taggable_type: "TypeA")
-      expect(record).to respond_to(:tag_kind)
-      expect(record.tag_kind).to eq("TypeA")
+    describe "Instance.<key>_<accessor>?" do
+      it "returns true for the configured polymorphic type" do
+        expect(record.TypeA_tag_kind?).to be true
+      end
+
+      it "returns false for a different polymorphic type" do
+        expect(record.TypeB_tag_kind?).to be false
+      end
     end
 
-    it "defines instance setter for accessor" do
-      record = PolymorphicTestModel.new
-      expect(record).to respond_to(:tag_kind=)
-      record.tag_kind = "TypeB"
-      expect(record.taggable_type).to eq("TypeB")
+    describe "Model.<key>_<accessor>" do
+      let(:scope_queries) do
+        definitions.map do |key, metadata|
+          [PolymorphicTestModel.public_send("#{key}_tag_kind").to_sql, metadata[:value]]
+        end
+      end
+
+      it "queries the configured polymorphic type column for each definition" do
+        expect(scope_queries).to all(satisfy { |sql, value| sql.include?("\"taggable_type\" = '#{value}'") })
+      end
+    end
+
+    describe "Validating polymorphic Instance.<accessor>" do
+      context "when the configured column value is in the list of definitions" do
+        before { record.valid? }
+
+        it "is valid" do
+          expect(record).to be_valid
+        end
+
+        it "does not add an error on the configured column" do
+          expect(record.errors[:taggable_type]).to be_empty
+        end
+      end
+
+      context "when the configured column value is not in the list of definitions" do
+        let(:record) { PolymorphicTestModel.new(taggable_type: "InvalidType", record_type: current_value) }
+
+        before { record.valid? }
+
+        it "is not valid" do
+          expect(record).to be_invalid
+        end
+
+        it "adds an error on the configured column" do
+          expect(record.errors[:taggable_type]).to include("must be one of: TypeA, TypeB")
+        end
+      end
     end
   end
 end

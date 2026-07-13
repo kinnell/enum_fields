@@ -3,33 +3,35 @@
 require "spec_helper"
 
 RSpec.describe EnumFields::Definition do
-  subject { described_class.new(data) }
+  subject(:definition) { described_class.new(data) }
+
+  let(:data) do
+    {
+      pending: {
+        value: "pending",
+        label: "Pending",
+      },
+      active: {
+        value: "active",
+        label: "Active",
+      },
+    }
+  end
 
   describe "#initialize" do
-    context "when data is a Hash" do
-      let(:data) do
-        {
-          pending: {
-            value: "pending",
-            label: "Pending",
-          },
-          active: {
-            value: "active",
-            label: "Active",
-          },
-        }
+    context "when :data is a Hash" do
+      let(:output) { definition.data }
+
+      it "preserves the definitions" do
+        expect(output).to match(data)
       end
 
-      it "converts to HashWithIndifferentAccess" do
-        expect(subject.data).to be_a(HashWithIndifferentAccess)
-      end
-
-      it "preserves the hash data" do
-        expect(subject.data).to match(data)
+      it "returns a HashWithIndifferentAccess" do
+        expect(output).to be_a(HashWithIndifferentAccess)
       end
     end
 
-    context "when data is a HashWithIndifferentAccess" do
+    context "when :data is a HashWithIndifferentAccess" do
       let(:data) do
         {
           pending: {
@@ -38,13 +40,14 @@ RSpec.describe EnumFields::Definition do
           },
         }.with_indifferent_access
       end
+      let(:output) { definition.data }
 
-      it "uses the hash directly" do
-        expect(subject.data).to eq(data)
+      it "preserves the definitions" do
+        expect(output).to eq(data)
       end
     end
 
-    context "when data is an Array" do
+    context "when :data is an Array of values" do
       let(:data) do
         %w[
           pending
@@ -52,9 +55,10 @@ RSpec.describe EnumFields::Definition do
           archived
         ]
       end
+      let(:output) { definition.data }
 
-      it "converts to hash with value and label" do
-        expect(subject.data).to match({
+      it "builds definitions with labels" do
+        expect(output).to match({
           pending: {
             value: "pending",
             label: "pending",
@@ -69,13 +73,9 @@ RSpec.describe EnumFields::Definition do
           },
         })
       end
-
-      it "creates entries for all array elements" do
-        expect(subject.data.keys).to match(data)
-      end
     end
 
-    context "when data is an Array of Hashes with string values" do
+    context "when :data is an Array of Hashes with string values" do
       let(:data) do
         [
           {
@@ -92,9 +92,10 @@ RSpec.describe EnumFields::Definition do
           },
         ]
       end
+      let(:output) { definition.data }
 
-      it "converts to hash keyed by symbolized value" do
-        expect(subject.data).to match({
+      it "keys definitions by value" do
+        expect(output).to match({
           small: {
             value: "small",
             label: "Small",
@@ -110,32 +111,47 @@ RSpec.describe EnumFields::Definition do
         })
       end
 
-      it "creates entries for all array elements" do
-        expect(subject.data.keys).to match_array(%w[small medium large])
-      end
+      context "when an entry has additional properties" do
+        let(:data) do
+          [
+            {
+              value: "small",
+              label: "Small",
+              icon: "arrow_down",
+            },
+          ]
+        end
+        let(:output) { definition.data[:small] }
 
-      it "preserves additional properties" do
-        definition = described_class.new([
-          {
+        it "preserves the additional properties" do
+          expect(output).to match({
             value: "small",
             label: "Small",
             icon: "arrow_down",
-          },
-        ])
-        expect(definition.data[:small][:icon]).to eq("arrow_down")
+          })
+        end
       end
 
-      it "defaults label to value when label is missing" do
-        definition = described_class.new([
-          {
+      context "when an entry omits :label" do
+        let(:data) do
+          [
+            {
+              value: "small",
+            },
+          ]
+        end
+        let(:output) { definition.data[:small] }
+
+        it "uses the value as the label" do
+          expect(output).to match({
             value: "small",
-          },
-        ])
-        expect(definition.data[:small][:label]).to eq("small")
+            label: "small",
+          })
+        end
       end
     end
 
-    context "when data is an Array of Hashes with integer values" do
+    context "when :data is an Array of Hashes with integer values" do
       let(:data) do
         [
           {
@@ -152,9 +168,10 @@ RSpec.describe EnumFields::Definition do
           },
         ]
       end
+      let(:output) { definition.data }
 
-      it "converts to hash keyed by symbolized value" do
-        expect(subject.data).to match({
+      it "keys definitions by value" do
+        expect(output).to match({
           "1": {
             value: 1,
             label: "Low",
@@ -169,37 +186,36 @@ RSpec.describe EnumFields::Definition do
           },
         })
       end
-
-      it "creates entries for all array elements" do
-        expect(subject.data.keys).to match_array(%w[1 2 3])
-      end
     end
 
-    context "when data is a String" do
+    context "when :data is a String" do
       let(:data) { "invalid" }
+      let(:output) { described_class.new(data) }
 
-      it "raises InvalidDefinitionsError" do
-        expect { subject }.to raise_error(EnumFields::InvalidDefinitionsError)
+      it "rejects the definitions" do
+        expect { output }.to raise_error(EnumFields::InvalidDefinitionsError)
       end
     end
 
-    context "when data is an Integer" do
+    context "when :data is an Integer" do
       let(:data) { 123 }
+      let(:output) { described_class.new(data) }
 
-      it "raises InvalidDefinitionsError" do
-        expect { subject }.to raise_error(EnumFields::InvalidDefinitionsError)
+      it "rejects the definitions" do
+        expect { output }.to raise_error(EnumFields::InvalidDefinitionsError)
       end
     end
 
-    context "when data is a nil" do
+    context "when :data is nil" do
       let(:data) { nil }
+      let(:output) { described_class.new(data) }
 
-      it "raises InvalidDefinitionsError" do
-        expect { subject }.to raise_error(EnumFields::InvalidDefinitionsError)
+      it "rejects the definitions" do
+        expect { output }.to raise_error(EnumFields::InvalidDefinitionsError)
       end
     end
 
-    context "when data is missing :value property" do
+    context "when :data omits :value" do
       let(:data) do
         {
           pending: {
@@ -207,100 +223,69 @@ RSpec.describe EnumFields::Definition do
           },
         }
       end
+      let(:output) { described_class.new(data) }
 
-      it "raises InvalidDefinitionsError" do
-        expect { subject }.to raise_error(EnumFields::InvalidDefinitionsError)
+      it "rejects the definitions" do
+        expect { output }.to raise_error(EnumFields::InvalidDefinitionsError)
       end
     end
   end
 
   describe "#valid?" do
-    context "when data is valid" do
-      let(:data) do
-        {
-          pending: {
-            value: "pending",
-            label: "Pending",
-          },
-        }
-      end
+    let(:output) { definition.valid? }
 
-      it "returns true" do
-        expect(subject.valid?).to be(true)
-      end
+    it "recognizes valid definitions" do
+      expect(output).to be(true)
     end
   end
 
   describe "#each" do
-    let(:data) do
-      {
-        pending: {
-          value: "pending",
-          label: "Pending",
-        },
-        active: {
-          value: "active",
-          label: "Active",
-        },
-      }
-    end
+    let(:output) { definition.each.map(&:first) }
 
-    it "iterates over the data" do
-      expect(subject.each.map(&:first)).to contain_exactly("pending", "active")
+    it "iterates over every definition" do
+      expect(output).to contain_exactly("pending", "active")
     end
   end
 
   describe "#[]" do
-    let(:data) do
-      {
-        pending: {
+    let(:output) { definition[key] }
+
+    context "with a symbol key" do
+      let(:key) { :pending }
+
+      it "retrieves the metadata" do
+        expect(output).to match({
           value: "pending",
           label: "Pending",
-        },
-      }
+        })
+      end
     end
 
-    it "returns the value for the key" do
-      expect(subject[:pending][:value]).to eq("pending")
-      expect(subject[:pending][:label]).to eq("Pending")
+    context "with a string key" do
+      let(:key) { "pending" }
+
+      it "retrieves the metadata" do
+        expect(output).to match({
+          value: "pending",
+          label: "Pending",
+        })
+      end
     end
   end
 
   describe "#keys" do
-    let(:data) do
-      {
-        pending: {
-          value: "pending",
-          label: "Pending",
-        },
-        active: {
-          value: "active",
-          label: "Active",
-        },
-      }
-    end
+    let(:output) { definition.keys }
 
-    it "returns all keys" do
-      expect(subject.keys).to contain_exactly("pending", "active")
+    it "returns every definition key" do
+      expect(output).to contain_exactly("pending", "active")
     end
   end
 
   describe "#values" do
-    let(:data) do
-      {
-        pending: {
-          value: "pending",
-          label: "Pending",
-        },
-        active: {
-          value: "active",
-          label: "Active",
-        },
-      }
-    end
+    let(:output) { definition.values }
 
-    it "returns all values" do
-      expect(subject.values).to match([
+    it "returns every definition" do
+      expect(output).to match([
         {
           value: "pending",
           label: "Pending",
@@ -314,78 +299,43 @@ RSpec.describe EnumFields::Definition do
   end
 
   describe "#dig" do
-    let(:data) do
-      {
-        pending: {
-          value: "pending",
-          label: "Pending",
-        },
-      }
-    end
+    let(:output) { definition.dig(:pending, :label) }
 
-    it "digs into nested hash" do
-      expect(subject.dig(:pending, :label)).to eq("Pending")
+    it "retrieves nested metadata" do
+      expect(output).to eq("Pending")
     end
   end
 
   describe "#size" do
-    let(:data) do
-      {
-        pending: {
-          value: "pending",
-          label: "Pending",
-        },
-        active: {
-          value: "active",
-          label: "Active",
-        },
-      }
-    end
+    let(:output) { definition.size }
 
-    it "returns the number of definitions" do
-      expect(subject.size).to eq(2)
+    it "reports the definition count" do
+      expect(output).to eq(2)
     end
   end
 
   describe "#map" do
-    let(:data) do
-      {
-        pending: {
-          value: "pending",
-          label: "Pending",
-        },
-        active: {
-          value: "active",
-          label: "Active",
-        },
-      }
-    end
+    let(:output) { definition.map { |key, _metadata| key } }
 
-    it "maps over the data" do
-      expect(subject.map { |key, _| key }).to contain_exactly("pending", "active")
+    it "transforms every definition" do
+      expect(output).to contain_exactly("pending", "active")
     end
   end
 
   describe "#blank?" do
-    context "when data is empty" do
+    let(:output) { definition.blank? }
+
+    context "when definitions are empty" do
       let(:data) { {} }
 
-      it "returns true" do
-        expect(subject.blank?).to be(true)
+      it "recognizes empty definitions" do
+        expect(output).to be(true)
       end
     end
 
-    context "when data is present" do
-      let(:data) do
-        {
-          pending: {
-            value: "pending",
-          },
-        }
-      end
-
-      it "returns false" do
-        expect(subject.blank?).to be(false)
+    context "when definitions are present" do
+      it "recognizes populated definitions" do
+        expect(output).to be(false)
       end
     end
   end

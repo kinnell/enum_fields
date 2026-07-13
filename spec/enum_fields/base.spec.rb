@@ -34,6 +34,7 @@ RSpec.describe EnumFields::Base do
       },
     }
   end
+  let(:current_metadata) { definitions.values.find { |metadata| metadata[:value] == record.status } }
 
   before do
     TestModel.enum_field :status, definitions
@@ -41,106 +42,95 @@ RSpec.describe EnumFields::Base do
   end
 
   describe "Model.enum_field_for" do
-    context "when the accessor is defined" do
-      let(:accessor) { :status }
+    context "when :accessor is defined" do
+      let(:output) { TestModel.enum_field_for(:status) }
 
       it "returns the definition" do
-        expect(TestModel.enum_field_for(accessor)).to match(definitions)
+        expect(output).to match(definitions)
       end
     end
 
-    context "when the accessor is not defined" do
-      let(:accessor) { :priority }
+    context "when :accessor is not defined" do
+      let(:output) { TestModel.enum_field_for(:priority) }
 
       it "returns nil" do
-        expect(TestModel.enum_field_for(accessor)).to be_nil
+        expect(output).to be_nil
       end
     end
   end
 
   describe "Model.enum_field?" do
-    context "when the accessor is defined" do
-      let(:accessor) { :status }
+    context "when :accessor is defined" do
+      let(:output) { TestModel.enum_field?(:status) }
 
       it "returns true" do
-        expect(TestModel.enum_field?(accessor)).to be_truthy
+        expect(output).to be true
       end
     end
 
-    context "when the accessor is not defined" do
-      let(:accessor) { :priority }
+    context "when :accessor is not defined" do
+      let(:output) { TestModel.enum_field?(:priority) }
 
       it "returns false" do
-        expect(TestModel.enum_field?(accessor)).to be_falsey
+        expect(output).to be false
       end
     end
   end
 
   describe "Model.<accessor>s" do
-    it "defines definitions method on the class" do
-      expect(TestModel).to respond_to(:statuses)
-    end
+    let(:output) { TestModel.statuses }
 
     it "returns definitions as a hash" do
-      expect(TestModel.statuses).to match(definitions)
+      expect(output).to match(definitions)
     end
   end
 
   describe "Model.<accessor>s_count" do
-    it "defines definitions count method on the class" do
-      expect(TestModel).to respond_to(:statuses_count)
-    end
+    let(:output) { TestModel.statuses_count }
 
     it "returns the number of definitions" do
-      expect(TestModel.statuses_count).to eq(definitions.size)
+      expect(output).to eq(definitions.size)
     end
   end
 
   describe "Model.<accessor>_values" do
-    it "defines definitions values method on the class" do
-      expect(TestModel).to respond_to(:status_values)
-    end
+    let(:output) { TestModel.status_values }
 
     it "returns the values of the definitions" do
-      expect(TestModel.status_values).to eq(%w[draft published])
+      expect(output).to match_array(definitions.values.pluck(:value))
     end
   end
 
   describe "Model.<accessor>_options" do
-    it "defines definitions options method on the class" do
-      expect(TestModel).to respond_to(:status_options)
-    end
+    let(:output) { TestModel.status_options }
 
     it "returns the options of the definitions" do
-      expect(TestModel.status_options).to match(definitions.map { |_key, definition|
+      expect(output).to match(definitions.map { |_key, definition|
         [definition[:label], definition[:value]]
       })
     end
   end
 
   describe "Model.<key>_<accessor>_value" do
-    it "defines value accessor methods for each key on the class" do
-      expect(TestModel).to respond_to(:draft_status_value)
-      expect(TestModel).to respond_to(:published_status_value)
+    let(:output) do
+      definitions.keys.to_h { |key| [key, TestModel.public_send("#{key}_status_value")] }
     end
+    let(:expected_output) { definitions.transform_values { |metadata| metadata[:value] } }
 
-    it "returns the value for each key" do
-      expect(TestModel.draft_status_value).to eq("draft")
-      expect(TestModel.published_status_value).to eq("published")
+    it "returns the value for each definition" do
+      expect(output).to eq(expected_output)
     end
   end
 
   describe "Instance.enum_fields_metadata" do
-    it "defines enum_fields_metadata method on the instance" do
-      expect(record).to respond_to(:enum_fields_metadata)
-    end
+    let(:output) { record.enum_fields_metadata }
 
     it "returns a HashWithIndifferentAccess" do
-      expect(record.enum_fields_metadata).to be_a(HashWithIndifferentAccess)
+      expect(output).to be_a(HashWithIndifferentAccess)
     end
 
     it "returns the metadata of the accessor" do
-      expect(record.enum_fields_metadata).to match({
+      expect(output).to match({
         status: definitions[record.status.to_sym],
         category: category_definitions[record.category.to_sym],
       })
@@ -148,142 +138,101 @@ RSpec.describe EnumFields::Base do
   end
 
   describe "Instance.<accessor>" do
-    it "defines getter method on the instance" do
-      expect(record).to respond_to(:status)
-    end
+    let(:output) { record.status }
 
     it "returns the value of the accessor" do
-      expect(record.status).to eq(status_value)
+      expect(output).to eq(status_value)
     end
   end
 
   describe "Instance.<accessor>=" do
-    it "defines setter method on the instance" do
-      expect(record).to respond_to(:status=)
-    end
+    let(:new_value) { definitions.values.last[:value] }
+
+    before { record.status = new_value }
 
     it "sets the value of the accessor" do
-      expect(record.status).to eq(status_value)
+      expect(record.status).to eq(new_value)
     end
   end
 
   describe "Instance.<accessor>_metadata" do
-    it "defines metadata method on the instance" do
-      expect(record).to respond_to(:status_metadata)
-    end
+    let(:output) { record.status_metadata }
 
     it "returns the metadata of the accessor" do
-      expect(record.status_metadata).to match(definitions[:draft])
+      expect(output).to match(current_metadata)
     end
   end
 
   describe "Instance.<accessor>_value" do
-    it "defines value method on the instance" do
-      expect(record).to respond_to(:status_value)
-    end
+    let(:output) { record.status_value }
 
     it "returns the value of the accessor" do
-      expect(record.status_value).to eq(definitions.dig(:draft, :value))
+      expect(output).to eq(current_metadata[:value])
     end
   end
 
-  describe "Instance.<accessor>_label" do
-    it "defines label method on the instance" do
-      expect(record).to respond_to(:status_label)
+  describe "Instance.<accessor>_<property>" do
+    let(:properties) { current_metadata.except(:value) }
+    let(:output) do
+      properties.keys.to_h { |property| [property, record.public_send("status_#{property}")] }
     end
 
-    it "returns the label of the accessor" do
-      expect(record.status_label).to eq(definitions.dig(:draft, :label))
-    end
-  end
-
-  describe "Instance.<accessor>_icon" do
-    it "defines icon method on the instance" do
-      expect(record).to respond_to(:status_icon)
-    end
-
-    it "returns the icon of the accessor" do
-      expect(record.status_icon).to eq(definitions.dig(:draft, :icon))
+    it "returns each additional property of the accessor" do
+      expect(output).to eq(properties)
     end
   end
 
-  describe "Instance.<accessor>_color" do
-    it "defines color method on the instance" do
-      expect(record).to respond_to(:status_color)
+  describe "Instance.<key>_<accessor>?" do
+    let(:output) do
+      definitions.keys.to_h { |key| [key, record.public_send("#{key}_status?")] }
+    end
+    let(:expected_output) do
+      definitions.transform_values { |metadata| record.status == metadata[:value] }
     end
 
-    it "returns the color of the accessor" do
-      expect(record.status_color).to eq(definitions.dig(:draft, :color))
-    end
-  end
-
-  describe "Instance.<accessor>_tooltip" do
-    it "defines tooltip method on the instance" do
-      expect(record).to respond_to(:status_tooltip)
-    end
-
-    it "returns the tooltip of the accessor" do
-      expect(record.status_tooltip).to eq(definitions.dig(:draft, :tooltip))
-    end
-  end
-
-  describe "Instance.<accessor>?" do
-    it "defines inquiry methods on the instance" do
-      expect(record).to respond_to(:draft_status?)
-      expect(record).to respond_to(:published_status?)
-    end
-
-    it "returns true if the accessor is draft" do
-      expect(record.draft_status?).to be_truthy
-      expect(record.published_status?).to be_falsey
+    it "returns whether the accessor matches each definition" do
+      expect(output).to eq(expected_output)
     end
   end
 
   describe "Model.<key>_<accessor>" do
-    it "defines scope methods on the class" do
-      expect(TestModel).to respond_to(:draft_status)
-      expect(TestModel).to respond_to(:published_status)
+    let(:scope_queries) do
+      definitions.map do |key, metadata|
+        [TestModel.public_send("#{key}_status").to_sql, metadata[:value]]
+      end
     end
 
-    it "returns the records with the draft scope" do
-      expect(TestModel.draft_status.to_sql).to match(%r{
-        \ASELECT\s+"with_model_test_models_\d+_\d+"\.\*
-        \s+FROM\s+"with_model_test_models_\d+_\d+"
-        \s+WHERE\s+"with_model_test_models_\d+_\d+"\."status"\s+=\s+'draft
-      }x)
-    end
-
-    it "returns the records with the published scope" do
-      expect(TestModel.published_status.to_sql).to match(%r{
-        \ASELECT\s+"with_model_test_models_\d+_\d+"\.\*
-        \s+FROM\s+"with_model_test_models_\d+_\d+"
-        \s+WHERE\s+"with_model_test_models_\d+_\d+"\."status"\s+=\s+'published
-      }x)
+    it "filters by the value for each definition" do
+      expect(scope_queries).to all(satisfy { |sql, value| sql.include?("\"status\" = '#{value}'") })
     end
   end
 
-  describe "Instance validation" do
-    context "when the accessor value is in the list of definitions" do
+  describe "Validating Instance.<accessor>" do
+    context "when the Instance.<accessor> value is in the list of definitions" do
       let(:status_value) { "draft" }
 
-      before do
-        record.update(status: status_value)
-      end
+      before { record.valid? }
 
       it "is valid" do
         expect(record).to be_valid
       end
+
+      it "does not add an error on the accessor" do
+        expect(record.errors[:status]).to be_empty
+      end
     end
 
-    context "when the accessor value is not in the list of definitions" do
+    context "when the Instance.<accessor> value is not in the list of definitions" do
       let(:status_value) { "archived" }
 
-      before do
-        record.update(status: status_value)
-      end
+      before { record.valid? }
 
       it "is not valid" do
         expect(record).to be_invalid
+      end
+
+      it "adds an error on the accessor" do
+        expect(record.errors[:status]).not_to be_empty
       end
     end
   end

@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
-RSpec.describe "EnumFields::VERSION" do
-  it "has a version number" do
-    expect(EnumFields::VERSION).not_to be(nil)
+RSpec.describe EnumFields::VERSION do
+  let(:output) { EnumFields::VERSION }
+
+  it "uses semantic version format" do
+    expect(output).to match(%r{\A[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\z})
   end
 end
