@@ -181,10 +181,10 @@ Campaign.stages
 Campaign.stages_count # 3
 
 # Returns the values of the definitions
-Campaign.stages_values # ["draft", "scheduled", "completed"]
+Campaign.stage_values # ["draft", "scheduled", "completed"]
 
 # Returns the options for form helpers
-Campaign.stages_options # [["Draft", "draft"], ["Scheduled", "scheduled"], ["Completed", "completed"]]
+Campaign.stage_options # [["Draft", "draft"], ["Scheduled", "scheduled"], ["Completed", "completed"]]
 
 # Returns the value for a specific key
 Campaign.draft_stage_value     # "draft"
