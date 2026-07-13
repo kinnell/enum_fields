@@ -59,8 +59,8 @@ module EnumFields
       end
 
       @model_class.define_singleton_method("#{@accessor}_options") do
-        definition_data.map do |key, metadata|
-          [metadata[:label], key.to_s]
+        definition_data.map do |_key, metadata|
+          [metadata[:label], metadata[:value]]
         end
       end
     end

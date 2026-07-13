@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [X.X.X] - YYYY-MM-DD
 
+- Fix `*_options` to emit each definition's stored `value` instead of its key, so options generated from array definitions or hash definitions with keys that differ from their values submit values the inclusion validation actually accepts
+
 ## [0.4.1] - 2026-03-26
 
 - Update `bin/ci` and `bin/release` to use new formatting functions

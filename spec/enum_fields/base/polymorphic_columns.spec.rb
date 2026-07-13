@@ -293,6 +293,13 @@ RSpec.describe EnumFields::Base, "Polymorphic Columns" do
       expect(PolymorphicTestModel.record_type_values).to contain_exactly("TypeA", "TypeB")
     end
 
+    it "options use the stored value rather than the definition key" do
+      expect(PolymorphicTestModel.record_type_options).to contain_exactly(
+        ["Type A", "TypeA"],
+        ["Type B", "TypeB"]
+      )
+    end
+
     it "property methods work via value lookup when key does not match column value" do
       record = PolymorphicTestModel.new(record_type: "TypeA")
       expect(record.record_type_label).to eq("Type A")

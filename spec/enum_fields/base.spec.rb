@@ -112,8 +112,8 @@ RSpec.describe EnumFields::Base do
     end
 
     it "returns the options of the definitions" do
-      expect(TestModel.status_options).to match(definitions.map { |key, definition|
-        [definition[:label], key.to_s]
+      expect(TestModel.status_options).to match(definitions.map { |_key, definition|
+        [definition[:label], definition[:value]]
       })
     end
   end

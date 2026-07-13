@@ -302,6 +302,37 @@ RSpec.describe EnumFields::EnumField do
     end
   end
 
+  describe "with a key that differs from its value" do
+    let(:mismatched_definitions) do
+      {
+        pending_review: {
+          value: "in review",
+          label: "Pending Review",
+        },
+        active: {
+          value: "is active",
+          label: "Active",
+        },
+      }
+    end
+
+    before do
+      described_class.new(
+        model_class: TestModel,
+        accessor: :status,
+        definition: mismatched_definitions,
+        options: {}
+      ).define!
+    end
+
+    it "returns the stored value, not the key, in options" do
+      expect(TestModel.status_options).to match([
+        ["Pending Review", "in review"],
+        ["Active", "is active"],
+      ])
+    end
+  end
+
   describe "with array definition" do
     before do
       described_class.new(
