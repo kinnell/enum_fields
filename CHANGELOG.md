@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [X.X.X] - YYYY-MM-DD
 
+## [0.4.2] - 2026-07-13
+
 - Fix `*_options` to emit each definition's stored `value` instead of its key, so options generated from array definitions or hash definitions with keys that differ from their values submit values the inclusion validation actually accepts
 - Bump `required_ruby_version` to `>= 3.1` to match the anonymous block forwarding syntax already used by the gem, which raised `SyntaxError` on Ruby 2.7/3.0 despite the gemspec claiming support
 - Fix README to document the singular `*_values`/`*_options` class methods (e.g. `Campaign.stage_values`) that the gem actually defines, instead of the nonexistent pluralized forms (e.g. `Campaign.stages_values`)
